@@ -1,0 +1,14 @@
+==> offers <==
+offer,category,quantity,company,offervalue,brand
+
+==> sampleSubmission <==
+id,repeatProbability
+
+==> testHistory <==
+id,chain,offer,market,offerdate
+
+==> trainHistory <==
+id,chain,offer,market,repeattrips,repeater,offerdate
+
+==> transactions <==
+id,chain,dept,category,company,brand,date,productsize,productmeasure,purchasequantity,purchaseamount

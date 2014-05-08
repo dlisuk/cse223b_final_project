@@ -21,3 +21,9 @@ _testmain.go
 
 *.exe
 *.test
+
+data/offers
+data/sampleSubmission
+data/testHistory
+data/trainHistory
+data/transactions

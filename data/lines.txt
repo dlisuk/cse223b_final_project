@@ -1,0 +1,6 @@
+      38 offers
+  151485 sampleSubmission
+  151485 testHistory
+  160058 trainHistory
+ 349655790 transactions
+ 350118856 total
