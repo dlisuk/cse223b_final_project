@@ -1,29 +1,14 @@
-# Compiled Object files, Static and Dynamic libs (Shared Objects)
-*.o
-*.a
-*.so
+*.class
 
-# Folders
-_obj
-_test
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
 
-# Architecture specific extensions/prefixes
-*.[568vq]
-[568vq].out
+# Package Files #
+*.jar
+*.war
+*.ear
 
-*.cgo1.go
-*.cgo2.c
-_cgo_defun.c
-_cgo_gotypes.go
-_cgo_export.*
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+*.iml
 
-_testmain.go
-
-*.exe
-*.test
-
-data/offers
-data/sampleSubmission
-data/testHistory
-data/trainHistory
-data/transactions
