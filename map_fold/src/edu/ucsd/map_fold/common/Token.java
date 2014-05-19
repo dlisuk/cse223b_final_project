@@ -12,9 +12,9 @@ public class Token<State,Record,MemRecord>{
     public int   getId()                        { return id; }
     public int   getVersion()                   { return version; }
     public State getState()                     { return state; }
+    public void  setState( State _state )       { state = _state; }
     public Folder<State,Record> getFolder()     { return folder; }
     public Mapper<MemRecord,Record> getMapper() { return mapper; }
-    public void  setState( State _state )       { state = _state; }
 
     private final int                      id;
     private final int                      version;
