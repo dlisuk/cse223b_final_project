@@ -1,0 +1,18 @@
+{
+  "data":"s3://bucket/file.tsv",
+  "workers":5,
+  "tokens":[
+    {
+      "folder":"edu.ucsd.map_fold.example.logistic_regression.LRFolder",
+      "mapper":"edu.ucsd.map_fold.example.logistic_regression.Mapper",
+      "state":"edu.ucsd.map_fold.example.logistic_regression.LRState.Factory",
+      "init":"mu=0.1;lambda=1;n=100"
+    },
+    {
+      "folder":"edu.ucsd.map_fold.example.logistic_regression.LRFolder",
+      "mapper":"edu.ucsd.map_fold.example.logistic_regression.Mapper",
+      "state":"edu.ucsd.map_fold.example.logistic_regression.LRState.Factory",
+      "init":"mu=0.01;lambda=1;n=100"
+    }
+  ]
+}
