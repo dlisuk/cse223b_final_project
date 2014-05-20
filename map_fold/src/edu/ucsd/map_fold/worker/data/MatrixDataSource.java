@@ -1,4 +1,4 @@
-package edu.ucsd.map_fold.example.data;
+package edu.ucsd.map_fold.worker.data;
 
 import Jama.Matrix;
 import edu.ucsd.map_fold.common.DataSet;
@@ -7,6 +7,16 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class MatrixDataSource implements DataSet<Matrix>{
+    public static DataSet<Matrix> fromFile(String path, int offset, int rows){
+
+       return new MatrixDataSource(rows, 100);
+    }
+
+    public MatrixDataSource(Matrix _matrix){
+        rows   = _matrix.getRowDimension();
+        cols   = _matrix.getColumnDimension();
+        matrix = _matrix.copy();
+    }
     public MatrixDataSource(int _rows, int _cols){
         rows   = _rows;
         cols   = _cols;
