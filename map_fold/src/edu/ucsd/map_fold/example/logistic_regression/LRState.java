@@ -1,8 +1,17 @@
 package edu.ucsd.map_fold.example.logistic_regression;
 
 import Jama.Matrix;
+import edu.ucsd.map_fold.common.StateFactory;
 
 public class LRState {
+    public static class Factory implements StateFactory<LRState>{
+        public LRState fromString(String params) {
+            int n = 100;
+            double lam = 0.1;
+            double mu = 0.1;
+            return new LRState(mu,lam,n);
+        }
+    }
     public LRState(double _mu, double _lambda, int n) {
         learningRate    = _mu;
         regularization  = _lambda;
