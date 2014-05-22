@@ -1,7 +1,8 @@
-package edu.ucsd.map_fold.example.logistic_regression;
+package edu.ucsd.map_fold.common.logistic_regression;
 
 import Jama.Matrix;
 import edu.ucsd.map_fold.common.Folder;
+import edu.ucsd.map_fold.common.logistic_regression.LRState;
 
 public class LRFolder implements Folder<LRState, Matrix> {
     @Override

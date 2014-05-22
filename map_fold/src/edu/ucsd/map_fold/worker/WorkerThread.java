@@ -3,21 +3,15 @@ package edu.ucsd.map_fold.worker;
 import edu.ucsd.map_fold.common.DataSet;
 import edu.ucsd.map_fold.common.Folder;
 import edu.ucsd.map_fold.common.Mapper;
-import edu.ucsd.map_fold.common.Token;
+import edu.ucsd.map_fold.common.logistic_regression.Token;
 
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
-public class Worker <MemRecord,Record,State> {
-    public Worker(DataSet<MemRecord> _data, Token<State,Record,MemRecord> _token){
-        data   = _data;
-        token  = _token;
-        folder = token.getFolder();
-        mapper = token.getMapper();
-        stateLock = new ReentrantLock();
+public class WorkerThread{
+    public WorkerThread(WorkerNode parent)
     }
 
-    public boolean doWork(){
+    public Token run(Token inToken){
         if(stateLock.tryLock()){
             try {
                 stateLock.lock();
@@ -28,19 +22,22 @@ public class Worker <MemRecord,Record,State> {
                         state = folder.fold(state, rec);
                 }
                 token.setState(state);
-                return true;
             }catch(Exception e){
-                System.err.println(e.getMessage());
-                return false;
+                error = e;
             }finally{
                 stateLock.unlock();
             }
         }else{
-            return false;
+            error = new Exception("WorkerThread is locked");
         }
     }
 
+    public Exception getExceptions(){
+        return error;
+    }
+
     private       Lock                          stateLock;
+    private       Exception                     error;
     private final DataSet<MemRecord>            data;
     private final Token<State,Record,MemRecord> token;
     private final Folder<State,Record>          folder;

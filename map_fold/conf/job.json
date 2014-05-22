@@ -3,16 +3,12 @@
   "workers":5,
   "tokens":[
     {
-      "folder":"edu.ucsd.map_fold.example.logistic_regression.LRFolder",
-      "mapper":"edu.ucsd.map_fold.example.logistic_regression.Mapper",
-      "state":"edu.ucsd.map_fold.example.logistic_regression.LRState.Factory",
-      "init":"mu=0.1;lambda=1;n=100"
+      "mu":0.1,"lambda":0.1,
+      "fields":[0,1,2,3]
     },
     {
-      "folder":"edu.ucsd.map_fold.example.logistic_regression.LRFolder",
-      "mapper":"edu.ucsd.map_fold.example.logistic_regression.Mapper",
-      "state":"edu.ucsd.map_fold.example.logistic_regression.LRState.Factory",
-      "init":"mu=0.01;lambda=1;n=100"
+      "mu":0.01,"lambda":0.1,
+      "fields":[0,1,2]
     }
   ]
 }
