@@ -28,6 +28,14 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
         for(int i = 0; i<nThreads; i++){
             threadPool.submit(new WorkerThread());
         }
+        //todo:populate workers table
+        while(true){
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private class WorkerThread implements Runnable{
