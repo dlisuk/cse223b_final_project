@@ -2,6 +2,11 @@ package edu.ucsd.map_fold.worker;
 
 import Jama.Matrix;
 import edu.ucsd.map_fold.common.DataSet;
+import edu.ucsd.map_fold.common.Folder;
+import edu.ucsd.map_fold.common.Mapper;
+import edu.ucsd.map_fold.common.logistic_regression.LRFolder;
+import edu.ucsd.map_fold.common.logistic_regression.LRMapper;
+import edu.ucsd.map_fold.common.logistic_regression.LRState;
 import edu.ucsd.map_fold.common.logistic_regression.Token;
 import edu.ucsd.map_fold.common.WorkerInterface;
 import edu.ucsd.map_fold.worker.data.MatrixDataSource;
@@ -20,12 +25,36 @@ import java.util.concurrent.SynchronousQueue;
 public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
     public WorkerNode(int nThreads) throws RemoteException{
         threadPool = Executors.newFixedThreadPool(nThreads);
-        while(){
-            if( !workQueue.isEmpty() ){
-                WorkerThread worker = workQueue.peek();
-                threadPool.submit(worker)
-            }else{
-                Thread.sleep(1000)
+        for(int i = 0; i<nThreads; i++){
+            threadPool.submit(new WorkerThread());
+        }
+    }
+
+    private class WorkerThread implements Runnable{
+        public WorkerThread(){}
+        public void run() {
+            while(true){
+                if( workQueue.isEmpty() ){
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }else {
+                    Token token = workQueue.remove();
+                    Mapper<Matrix,Matrix> mapper = new LRMapper(token.getFields());
+                    LRState state = token.getState();
+                    for (Matrix memRec : data) {
+                        Matrix rec = mapper.map(memRec);
+                        state = folder.fold(state, rec);
+                    }
+                    Token outToken = token.setState(state);
+                    try {
+                        uploadToken(outToken);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
@@ -33,7 +62,7 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
     public void uploadToken(Token token) throws RemoteException{
         Integer id = token.getId();
         Integer version = token.getVersion();
-        tokenStore.put(new Pair<>(id,version),token);
+        tokenStore.put(new Pair<>(id, version), token);
     }
     public void startWork(int tokenId, int version) throws RemoteException{
         workQueue.add(tokenStore.get(new Pair<>(tokenId, version)));
@@ -50,8 +79,8 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
     }
     private DataSet<Matrix>                  data       = null;
     private Map<Pair<Integer,Integer>,Token> tokenStore = new HashMap<>();
-    private Queue<WorkerThread>              workQueue  = new SynchronousQueue<>();
+    private Queue<Token>                     workQueue  = new SynchronousQueue<>();
     private Map<Integer,WorkerInterface>     workers    = new HashMap<>();
     private ExecutorService                  threadPool;
-    private
+    private Folder<LRState,Matrix>           folder     = new LRFolder();
 }

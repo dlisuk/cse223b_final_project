@@ -19,6 +19,7 @@ public class Token{
 
     public int     getId()                        { return id; }
     public int     getVersion()                   { return version; }
+    public List<Integer> getFields()              { return fields; }
     public LRState getState()                     { return state; }
     public Token   setState( LRState _state )     { return new Token( id, version+1, fields, _state); }
 

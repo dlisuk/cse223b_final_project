@@ -9,7 +9,9 @@ import java.util.List;
 
 public class LRMapper implements Mapper<Matrix,Matrix> {
     public LRMapper(List<Integer> _fields){
-        fields = _fields.toArray(firstRow);
+        fields = new int[_fields.size()];
+        for(int i = 0; i<_fields.size(); i++)
+            fields[i] = _fields.get(i);
     }
     public Matrix map(Matrix x) {
 
