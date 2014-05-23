@@ -1,7 +1,5 @@
 package edu.ucsd.map_fold.common;
 import java.rmi.*;
-import java.rmi.server.*;
-import edu.ucsd.map_fold.worker;
 import edu.ucsd.map_fold.worker.WorkerNode;
 
 /**
@@ -10,7 +8,7 @@ import edu.ucsd.map_fold.worker.WorkerNode;
 public class WorkerServer {
     public static void main (String[] argv){
         try{
-            WorkerNode worker = new WorkerNode();
+            WorkerNode worker = new WorkerNode(2);
             worker.start();
             Naming.rebind ("worker", worker);
 
