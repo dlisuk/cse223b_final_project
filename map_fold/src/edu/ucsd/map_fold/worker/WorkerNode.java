@@ -23,18 +23,15 @@ import java.util.concurrent.SynchronousQueue;
 
 /* WorkerNode -- Main class to launch a worker node */
 public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
-    public WorkerNode(int nThreads) throws RemoteException{
+    public WorkerNode(int _nThreads) throws RemoteException{
+        nThreads = _nThreads;
         threadPool = Executors.newFixedThreadPool(nThreads);
+        //TODO: populate worker list
+    }
+
+    public void start(){
         for(int i = 0; i<nThreads; i++){
             threadPool.submit(new WorkerThread());
-        }
-        //todo:populate workers table
-        while(true){
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -91,4 +88,5 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
     private Map<Integer,WorkerInterface>     workers    = new HashMap<>();
     private ExecutorService                  threadPool;
     private Folder<LRState,Matrix>           folder     = new LRFolder();
+    private int                              nThreads;
 }
