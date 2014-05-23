@@ -1,21 +1,22 @@
 package edu.ucsd.map_fold.common;
 
-import jdk.nashorn.internal.parser.JSONParser;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.ParseException;
 
 public class Config{
-    public Config(String path) throws IOException, ParseException{
+    public Config(String path) throws IOException, ParseException {
         parser = new JSONParser();
-        root   = (JSONObject) parser.parse(new FileReader(path));
+        this.root = (JSONObject) parser.parse(new FileReader(path));
         JSONArray workerNodes = (JSONArray)root.get("worker");
         JSONArray controllerNodes = (JSONArray)root.get("controller");
         nworkers    = workerNodes.size();
         workers     = new WorkerConfig[nworkers];
-        ncontrollers = controllerNodes.size()
+        ncontrollers = controllerNodes.size();
         controllers = new ControllerConfig[ncontrollers];
         for(int i = 0; i < nworkers; i++){
             workers[i] = new WorkerConfig((JSONObject)workerNodes.get(i));

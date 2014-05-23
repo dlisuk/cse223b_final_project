@@ -1,4 +1,5 @@
 package edu.ucsd.map_fold.common;
+import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
 /**
@@ -13,14 +14,7 @@ public class ControllerClient {
 //        }
 //    }
 
-    public static WorkerInterface connectToController(String IP) {
-        try {
-            ControllerInterface controller =
-                    (WorkerInterface) Naming.lookup (IP+"/Controller");
-            // (HelloInterface) Naming.lookup ("/Hello2");
-            return controller;
-        } catch (Exception e) {
-            System.out.println ("ControllerClient exception: " + e);
-        }
+    public static ControllerInterface connectToController(String IP) throws RemoteException, NotBoundException, MalformedURLException {
+        return (ControllerInterface) Naming.lookup(IP+"/Controller");
     }
 }

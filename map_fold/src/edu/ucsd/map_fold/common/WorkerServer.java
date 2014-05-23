@@ -8,7 +8,11 @@ import edu.ucsd.map_fold.worker.WorkerNode;
 public class WorkerServer {
     public static void main (String[] argv){
         try{
-            WorkerNode worker = new WorkerNode(2);
+            String worker_conf_path = "conf/example.json";
+
+            Config config = new Config(worker_conf_path);
+
+            WorkerNode worker = new WorkerNode(0, config);
             worker.start();
             Naming.rebind ("worker", worker);
 

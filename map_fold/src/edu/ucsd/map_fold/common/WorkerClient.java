@@ -1,4 +1,5 @@
 package edu.ucsd.map_fold.common;
+import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
 /**
@@ -12,14 +13,7 @@ public class WorkerClient {
 //
 //        }
 //    }
-    public static WorkerInterface connectToWorker(String IP) {
-        try {
-            WorkerInterface worker =
-                    (WorkerInterface) Naming.lookup (IP+"/Worker");
-            // (HelloInterface) Naming.lookup ("/Hello2");
-            return worker;
-        } catch (Exception e) {
-            System.out.println ("WorkerClient exception: " + e);
-        }
+    public static WorkerInterface connectToWorker(String IP) throws RemoteException, NotBoundException, MalformedURLException {
+        return (WorkerInterface) Naming.lookup (IP+"/Worker");
     }
 }

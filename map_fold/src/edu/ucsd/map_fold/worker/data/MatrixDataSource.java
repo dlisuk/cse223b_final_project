@@ -7,9 +7,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class MatrixDataSource implements DataSet<Matrix>{
-    public static DataSet<Matrix> fromFile(String path, int offset, int rows){
+    public static DataSet<Matrix> fromFile(String path, int offset, int nbytes){
 
-       return new MatrixDataSource(rows, 100);
+       return new MatrixDataSource(nbytes, 100);
     }
 
     public MatrixDataSource(Matrix _matrix){

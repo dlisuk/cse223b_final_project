@@ -1,32 +1,49 @@
 package edu.ucsd.map_fold.worker;
 
 import Jama.Matrix;
-import edu.ucsd.map_fold.common.DataSet;
-import edu.ucsd.map_fold.common.Folder;
-import edu.ucsd.map_fold.common.Mapper;
+import edu.ucsd.map_fold.common.*;
 import edu.ucsd.map_fold.common.logistic_regression.LRFolder;
 import edu.ucsd.map_fold.common.logistic_regression.LRMapper;
 import edu.ucsd.map_fold.common.logistic_regression.LRState;
 import edu.ucsd.map_fold.common.logistic_regression.Token;
-import edu.ucsd.map_fold.common.WorkerInterface;
 import edu.ucsd.map_fold.worker.data.MatrixDataSource;
 import javafx.util.Pair;
 
+import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 
 /* WorkerNode -- Main class to launch a worker node */
 public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
-    public WorkerNode(int _nThreads) throws RemoteException{
-        nThreads = _nThreads;
+    public WorkerNode(int workerId, Config config) throws RemoteException{
+        Config.WorkerConfig myConf = config.getWorker(workerId);
+        nThreads = myConf.getNThreads();
         threadPool = Executors.newFixedThreadPool(nThreads);
-        //TODO: populate worker list
+
+        for( int i = 0; i < config.getNcontrollers(); i++){
+            Config.WorkerConfig wConfig = config.getWorker(i);
+            try {
+                workers.put(i,WorkerClient.connectToWorker(wConfig.getAddr()));
+            } catch (NotBoundException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        for( int i = 0; i < config.getNworkers(); i++){
+            Config.ControllerConfig cConfig = config.getController(i);
+            try {
+                controllers.add(ControllerClient.connectToController(cConfig.getAddr()));
+            } catch (NotBoundException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void start(){
@@ -81,11 +98,25 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
 
     public void loadData(String filePath, int offset, int count) throws RemoteException{
         data = MatrixDataSource.fromFile(filePath,offset,count);
+        boolean success = false;
+        int i = 0;
+        while(success == false && i < controllers.size()){
+            try{
+                controllers.get(i).dataLoaded(filePath,offset,count);
+                success = true;
+            }catch (Exception e){
+                i++;
+            }
+        }
+        if( success == false ){
+            throw new RemoteException("No controller to inform");
+        }
     }
     private DataSet<Matrix>                  data       = null;
     private Map<Pair<Integer,Integer>,Token> tokenStore = new HashMap<>();
     private Queue<Token>                     workQueue  = new SynchronousQueue<>();
     private Map<Integer,WorkerInterface>     workers    = new HashMap<>();
+    private List<ControllerInterface> controllers= new ArrayList<>();
     private ExecutorService                  threadPool;
     private Folder<LRState,Matrix>           folder     = new LRFolder();
     private int                              nThreads;
