@@ -1,7 +1,6 @@
 package edu.ucsd.map_fold.common.logistic_regression;
 
 import Jama.Matrix;
-import edu.ucsd.map_fold.common.StateFactory;
 
 public class LRState {
     public LRState(double _mu, double _lambda, int n) {
