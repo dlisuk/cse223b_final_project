@@ -15,6 +15,6 @@ public class ControllerClient {
 //    }
 
     public static ControllerInterface connectToController(String IP) throws RemoteException, NotBoundException, MalformedURLException {
-        return (ControllerInterface) Naming.lookup(IP+"/Controller");
+        return (ControllerInterface) Naming.lookup("//"+IP+"/Controller");
     }
 }

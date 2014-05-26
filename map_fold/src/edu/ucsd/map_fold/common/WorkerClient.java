@@ -14,6 +14,6 @@ public class WorkerClient {
 //        }
 //    }
     public static WorkerInterface connectToWorker(String IP) throws RemoteException, NotBoundException, MalformedURLException {
-        return (WorkerInterface) Naming.lookup (IP+"/Worker");
+        return (WorkerInterface) Naming.lookup ("//" + IP+"/Worker");
     }
 }
