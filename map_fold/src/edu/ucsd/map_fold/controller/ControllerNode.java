@@ -33,12 +33,15 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
         parser = new JsonParser(workerConf);
         this.workerList = parser.parseWorkerAddr();
+        this.controllerPort = parser.parseControllerPort();
 
         File file = new File(dataPath);
         this.fileSize = file.length();
 
     }
+
     public void doneWithWork() throws RemoteException{ }
+
 
     public void tokenReceived(int tokenId, int tokenVersion) throws RemoteException{
         //TODO read the data set and divide the works
@@ -59,8 +62,20 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         System.out.println("Divided data to all workers");
     }
 
-    public void dataLoaded(String filePath, int offset, int count){
+
+    public void dataLoaded(String filePath, int offset, int count) throws RemoteException{
         // TODO clients start work
+        for(WorkerConf worker : workerList){
+            try {
+                WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getUrl());
+                //workerRMI.startWork();
+
+            }catch (NotBoundException notBound){
+                notBound.printStackTrace();
+            }catch (MalformedURLException mu){
+                mu.printStackTrace();
+            }
+        }
     }
 
     public void init() throws RemoteException, NotBoundException, MalformedURLException{
@@ -113,6 +128,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public long workerNum;
     public String dataPath;
     public long fileSize;
+    public String controllerPort;
 
 
 }
