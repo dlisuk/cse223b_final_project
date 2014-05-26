@@ -8,7 +8,7 @@ import edu.ucsd.map_fold.worker.WorkerNode;
 public class WorkerServer {
     public static void main (String[] argv){
         try{
-            String worker_conf_path = "conf/example.json";
+            String worker_conf_path = "conf/server_conf.json";
 
             Config config = new Config(worker_conf_path);
 
@@ -18,6 +18,7 @@ public class WorkerServer {
 
         }catch(Exception e){
             System.out.println ("Hello Server failed: " + e);
+            e.printStackTrace();
         }
     }
 }

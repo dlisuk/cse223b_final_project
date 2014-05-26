@@ -34,12 +34,15 @@ public class Config{
     public class WorkerConfig{
         public WorkerConfig(JSONObject node){
             addr = (String) node.get("addr");
-            nThreads = (Integer) node.get("threads");
-
+            port = (String) node.get("port");
+            nThreads = ((Long) node.get("threads")).intValue();
         }
         private String  addr;
+        private String  port;
         private Integer nThreads;
-        public String getAddr() { return addr; }
+        public String getAddr() { return addr + ":" + port; }
+        public String getIpAddr() { return addr; }
+        public String getPort() { return port; }
         public Integer getNThreads() { return nThreads; }
     }
     public class ControllerConfig{
