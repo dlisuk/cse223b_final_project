@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
+import java.rmi.Naming;
 import java.util.List;
 import java.io.File;
 
@@ -86,7 +87,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
             for(int i = 0; i < tokenNum; i++){
                 try{
                     WorkerConf worker = workerList.get(i);
-                    WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getUrl());
+                    WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getRmiPath());
                     workerRMI.uploadToken(tokenList.get(i));
                 }catch (NotBoundException notBound){
                     notBound.printStackTrace();
@@ -98,7 +99,8 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
             for(int i = 0; i < workerNum; i++){
                 try {
                     WorkerConf worker = workerList.get(i);
-                    WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getUrl());
+                    System.out.println(worker.getRmiPath());
+                    WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getRmiPath());
                     workerRMI.uploadToken(tokenList.get(i));
 
                 }catch (NotBoundException notBound){

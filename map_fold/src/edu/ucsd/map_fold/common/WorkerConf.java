@@ -11,7 +11,11 @@ public class WorkerConf {
     }
 
     public String getUrl(){
-        return ipAddr + ":" + port;
+        return "//" + ipAddr + ":" + port;
+    }
+
+    public String getRmiPath(){
+        return getUrl() + "/Worker";
     }
 
     public String ipAddr;

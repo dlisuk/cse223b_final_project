@@ -28,10 +28,10 @@ public class ControllerServer {
             ControllerNode controller = new ControllerNode(job_conf_path, worker_conf_path);
 
             Registry registry = LocateRegistry.createRegistry(Integer.parseInt(controller.controllerPort));
-            registry.bind("controller", controller);
+            registry.bind("Controller", controller);
             System.out.println("Controller is ready");
 
-            controller.init();
+          //  controller.init();
 
         }catch(Exception e){
             e.printStackTrace();
