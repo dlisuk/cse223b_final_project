@@ -38,11 +38,9 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         this.fileSize = file.length();
 
     }
-    public Boolean DoneWithWork() throws RemoteException{
-        return true;
-    }
+    public void doneWithWork() throws RemoteException{ }
 
-    public Boolean tokenReceived(int tokenId, int tokenVersion) throws RemoteException{
+    public void tokenReceived(int tokenId, int tokenVersion) throws RemoteException{
         //TODO read the data set and divide the works
         int workerSize = workerList.size();
         int each_count = this.safeLongToInt(this.fileSize / workerSize);
@@ -59,13 +57,10 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
             }
         }
         System.out.println("Divided data to all workers");
-        return true;
     }
 
-    public Boolean dataLoaded(String filePath, int offset, int count){
+    public void dataLoaded(String filePath, int offset, int count){
         // TODO clients start work
-
-        return true;
     }
 
     public void init() throws RemoteException, NotBoundException, MalformedURLException{

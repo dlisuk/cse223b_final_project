@@ -19,30 +19,18 @@ import java.util.concurrent.SynchronousQueue;
 
 /* WorkerNode -- Main class to launch a worker node */
 public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
-    public WorkerNode(int workerId, Config config) throws RemoteException{
+    public WorkerNode(int workerId, Config config) throws RemoteException, MalformedURLException {
         Config.WorkerConfig myConf = config.getWorker(workerId);
         nThreads = myConf.getNThreads();
         threadPool = Executors.newFixedThreadPool(nThreads);
 
         for( int i = 0; i < config.getNcontrollers(); i++){
             Config.WorkerConfig wConfig = config.getWorker(i);
-            try {
-                workers.put(i,WorkerClient.connectToWorker(wConfig.getAddr()));
-            } catch (NotBoundException e) {
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+            workers.put(i,WorkerClient.connectToWorker(wConfig.getAddr()));
         }
         for( int i = 0; i < config.getNworkers(); i++){
             Config.ControllerConfig cConfig = config.getController(i);
-            try {
-                controllers.add(ControllerClient.connectToController(cConfig.getAddr()));
-            } catch (NotBoundException e) {
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+            controllers.add(ControllerClient.connectToController(cConfig.getAddr()));
         }
     }
 
