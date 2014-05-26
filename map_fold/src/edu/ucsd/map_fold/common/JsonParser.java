@@ -22,12 +22,12 @@ public class JsonParser {
        this.nodeData = (JSONObject) parser.parse(new FileReader(conf_path));
     }
 
-	public int parseControllerPort(){
+	public String parseControllerPort(){
 
         JSONArray controllerArray = (JSONArray)nodeData.get("controller");
     	
         JSONObject node = (JSONObject)controllerArray.get(0);
-    	int port = (Integer)node.get("port");
+    	String port = (String)node.get("port");
     	
 		return port;
 	}
@@ -48,7 +48,7 @@ public class JsonParser {
         for(Object o : nodeArray){
             JSONObject node = (JSONObject) o;
             String addr = (String)node.get("addr");
-            int port = safeLongToInt((Long)node.get("port"));
+            String port = (String)node.get("port");
             int threads = safeLongToInt((Long)node.get("threads"));
             WorkerConf wf = new WorkerConf(addr, port, threads);
             workerAddrList.add(wf);
@@ -56,6 +56,7 @@ public class JsonParser {
         return workerAddrList;
 
     }
+
 
     public List<Token> parseTokens(){
         JSONArray tokenArray = (JSONArray)nodeData.get("tokens");

@@ -1,5 +1,8 @@
 package edu.ucsd.map_fold.common;
 import java.rmi.*;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
 import edu.ucsd.map_fold.worker.WorkerNode;
 
 /**
@@ -14,7 +17,9 @@ public class WorkerServer {
 
             WorkerNode worker = new WorkerNode(0, config);
             worker.start();
-            Naming.rebind ("worker", worker);
+
+            Registry registry = LocateRegistry.createRegistry(8888);
+            registry.bind("worker", worker);
 
         }catch(Exception e){
             System.out.println ("Hello Server failed: " + e);
