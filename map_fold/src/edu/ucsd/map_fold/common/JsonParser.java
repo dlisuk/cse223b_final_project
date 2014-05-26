@@ -1,6 +1,5 @@
 package edu.ucsd.map_fold.common;
 
-import ava.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -14,11 +13,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import edu.ucsd.map_fold.common.logistic_regression.Token;
-
+import edu.ucsd.map_fold.common.WorkerConf;
 public class JsonParser {
 
     public JsonParser(String conf_path) throws IOException, ParseException{
        this.parser = new JSONParser();
+       System.out.println(conf_path);
        this.nodeData = (JSONObject) parser.parse(new FileReader(conf_path));
     }
 
@@ -32,8 +32,8 @@ public class JsonParser {
 		return port;
 	}
 
-    public int parseWorkerNum(){
-        int workerNum = (Integer)nodeData.get("workers");
+    public long parseWorkerNum(){
+        long workerNum = (Long)nodeData.get("workers");
         return workerNum;
     }
 
@@ -48,27 +48,36 @@ public class JsonParser {
         for(Object o : nodeArray){
             JSONObject node = (JSONObject) o;
             String addr = (String)node.get("addr");
-            int threads = (Integer)node.get("threads");
-            workerAddrList.add(addr);
+            int port = safeLongToInt((Long)node.get("port"));
+            int threads = safeLongToInt((Long)node.get("threads"));
+            WorkerConf wf = new WorkerConf(addr, port, threads);
+            workerAddrList.add(wf);
         }
         return workerAddrList;
 
     }
 
-    public List parseTokens(){
+    public List<Token> parseTokens(){
         JSONArray tokenArray = (JSONArray)nodeData.get("tokens");
-        List tokenList = new ArrayList<>();
+        List<Token> tokenList = new ArrayList<>();
         for(Object o : tokenArray){
             JSONObject token = (JSONObject) o;
             double mu = (Double)token.get("mu");
             double lambda = (Double)token.get("lambda");
-            Integer[] fields = (Integer[])token.get("fields");
-            List<Integer> fieldList = Arrays.asList(fields);
+            List<Integer> fieldList = (List)token.get("fields");
             Random tokenIdGen = new Random();
             Token tokenObject = new Token(tokenIdGen.nextInt(), fieldList, mu, lambda);
             tokenList.add(tokenObject);
         }
         return tokenList;
+    }
+
+    public int safeLongToInt(long l) {
+        if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException
+                    (l + " cannot be cast to int without changing its value.");
+        }
+        return (int) l;
     }
 
     private JSONParser parser;

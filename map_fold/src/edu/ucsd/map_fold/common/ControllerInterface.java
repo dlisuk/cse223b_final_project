@@ -6,6 +6,6 @@ import java.rmi.*;
  */
 public interface ControllerInterface extends Remote{
     public Boolean DoneWithWork() throws RemoteException;
-    public Boolean tokenReceived(int tokenId, int tokenVersion);
-    public Boolean dataLoaded(String filePath, int offset, int count);
+    public Boolean tokenReceived(int tokenId, int tokenVersion) throws RemoteException;
+    public Boolean dataLoaded(String filePath, int offset, int count) throws RemoteException;
 }
