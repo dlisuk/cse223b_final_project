@@ -24,11 +24,11 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
         nThreads = myConf.getNThreads();
         threadPool = Executors.newFixedThreadPool(nThreads);
 
-        for( int i = 0; i < config.getNcontrollers(); i++){
+        for( int i = 0; i < config.getNworkers(); i++){
             Config.WorkerConfig wConfig = config.getWorker(i);
             workers.put(i,WorkerClient.connectToWorker(wConfig.getAddr()));
         }
-        for( int i = 0; i < config.getNworkers(); i++){
+        for( int i = 0; i < config.getNcontrollers(); i++){
             Config.ControllerConfig cConfig = config.getController(i);
             controllers.add(ControllerClient.connectToController(cConfig.getAddr()));
         }
