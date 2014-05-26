@@ -26,8 +26,8 @@ public class ControllerServer {
             //int port = JsonParser.parseControllerPort(worker_conf_path);
 
             ControllerNode controller = new ControllerNode(job_conf_path, worker_conf_path);
-            System.out.println(controller.controllerPort);
-            Registry registry = LocateRegistry.getRegistry(controller.controllerPort);
+
+            Registry registry = LocateRegistry.createRegistry(Integer.parseInt(controller.controllerPort));
             registry.bind("controller", controller);
             System.out.println("Controller is ready");
 
