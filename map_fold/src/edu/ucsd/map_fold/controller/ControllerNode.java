@@ -79,35 +79,34 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
-    public void init() throws RemoteException, NotBoundException, MalformedURLException{
+    public void init() throws RemoteException{
         //TODO upload token to all clients
         int workerNum = workerList.size();
         int tokenNum = tokenList.size();
-        if (workerNum >= tokenNum){
+
+        for( WorkerConf workerConf : workerList){
+            try{
+                WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(workerConf.getRmiPath());
+                remoteWorkerRMI.add(workerRMI);
+            }
+            catch (NotBoundException notBound){
+                notBound.printStackTrace();
+            }catch (MalformedURLException mu){
+                mu.printStackTrace();
+            }
+        }
+
+        int functioningWorkerNum = remoteWorkerRMI.size();
+
+        if (functioningWorkerNum >= tokenNum){
             for(int i = 0; i < tokenNum; i++){
-                try{
-                    WorkerConf worker = workerList.get(i);
-                    WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getRmiPath());
-                    workerRMI.uploadToken(tokenList.get(i));
-                }catch (NotBoundException notBound){
-                    notBound.printStackTrace();
-                }catch (MalformedURLException mu){
-                    mu.printStackTrace();
-                }
+              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
+              workerRMI.uploadToken(tokenList.get(i));
             }
         }else{
             for(int i = 0; i < workerNum; i++){
-                try {
-                    WorkerConf worker = workerList.get(i);
-                    System.out.println(worker.getRmiPath());
-                    WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getRmiPath());
-                    workerRMI.uploadToken(tokenList.get(i));
-
-                }catch (NotBoundException notBound){
-                    notBound.printStackTrace();
-                }catch (MalformedURLException mu){
-                    mu.printStackTrace();
-                }
+              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
+              workerRMI.uploadToken(tokenList.get(i));
             }
         }
 
@@ -131,6 +130,6 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public String dataPath;
     public long fileSize;
     public String controllerPort;
-
+    public List<WorkerInterface> remoteWorkerRMI;
 
 }
