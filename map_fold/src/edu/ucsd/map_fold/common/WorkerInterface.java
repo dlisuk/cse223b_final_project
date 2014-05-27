@@ -10,4 +10,5 @@ public interface WorkerInterface extends Remote{
     public void startWork(int tokenId, int version) throws RemoteException;
     public void sendToken(int target, int tokenId, int version) throws RemoteException;
     public void loadData(String filePath, int offset, int count) throws RemoteException;
+    public void ping() throws RemoteException;
 }

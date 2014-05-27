@@ -100,6 +100,9 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
             throw new RemoteException("No controller to inform");
         }
     }
+
+    public void ping() throws RemoteException {}
+
     private DataSet<Matrix>                  data       = null;
     private Map<Pair<Integer,Integer>,Token> tokenStore = new HashMap<>();
     private Queue<Token>                     workQueue  = new SynchronousQueue<>();

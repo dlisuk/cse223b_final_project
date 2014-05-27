@@ -13,13 +13,17 @@ public class WorkerClient extends GenericClient<WorkerInterface> implements Work
         call( w -> {try{w.uploadToken(token); return null;}catch (RemoteException e){ return e; }} );
     }
     public void startWork(int tokenId, int version) throws RemoteException {
-        call( w -> {try{w.startWork(tokenId,version); return null;}catch (RemoteException e){ return e; }} );
+        call( w -> {try{w.startWork(tokenId, version); return null;}catch (RemoteException e){ return e; }} );
     }
     public void sendToken(int target, int tokenId, int version) throws RemoteException {
-        call( w -> {try{w.sendToken(target,tokenId,version); return null;}catch (RemoteException e){ return e; }} );
+        call( w -> {try{w.sendToken(target, tokenId, version); return null;}catch (RemoteException e){ return e; }} );
     }
     public void loadData(String filePath, int offset, int count) throws RemoteException {
-        call( w -> {try{w.loadData(filePath,offset,count); return null;}catch (RemoteException e){ return e; }} );
+        call( w -> {try{w.loadData(filePath, offset, count); return null;}catch (RemoteException e){ return e; }} );
+    }
+
+    public void ping() throws RemoteException {
+        call( w -> {try{w.ping(); return null;}catch (RemoteException e){ return e; }} );
     }
 
     private WorkerClient (String _addr) throws MalformedURLException {
