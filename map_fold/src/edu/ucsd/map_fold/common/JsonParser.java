@@ -59,6 +59,7 @@ public class JsonParser {
 
 
     public List<Token> parseTokens(){
+        int tokenId = 0;
         JSONArray tokenArray = (JSONArray)nodeData.get("tokens");
         List<Token> tokenList = new ArrayList<>();
         for(Object o : tokenArray){
@@ -66,9 +67,9 @@ public class JsonParser {
             double mu = (Double)token.get("mu");
             double lambda = (Double)token.get("lambda");
             List<Integer> fieldList = (List)token.get("fields");
-            Random tokenIdGen = new Random();
-            Token tokenObject = new Token(tokenIdGen.nextInt(), fieldList, mu, lambda);
+            Token tokenObject = new Token(tokenId, fieldList, mu, lambda);
             tokenList.add(tokenObject);
+            tokenId++;
         }
         return tokenList;
     }

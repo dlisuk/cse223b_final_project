@@ -41,6 +41,15 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         this.fileSize = file.length();
         this.remoteWorkerRMI = new ArrayList<>();
 
+        for( WorkerConf wc : workerList){
+            try{
+                System.out.println(wc.getRmiPath());
+                WorkerInterface workerRMI = WorkerClient.connectToWorker(wc.getUrl());
+                remoteWorkerRMI.add(workerRMI);
+            } catch (MalformedURLException e) {
+                throw new RemoteException("Malformed URL: " + wc.getUrl());
+            }
+        }
     }
 
     public void doneWithWork() throws RemoteException{ }
@@ -83,21 +92,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
     public void init() throws RemoteException{
         //TODO upload token to all clients
-        int workerNum = workerList.size();
-        int tokenNum = tokenList.size();
 
-        for( WorkerConf workerConf : workerList){
-            try{
-                System.out.println(workerConf.getRmiPath());
-                WorkerInterface workerRMI = WorkerClient.connectToWorker(workerConf.getUrl());
-                remoteWorkerRMI.add(workerRMI);
-            } catch (MalformedURLException e) {
-                throw new RemoteException("Malformed URL: " + workerConf.getUrl());
-            }
-        }
-
-        int functioningWorkerNum = remoteWorkerRMI.size();
-        System.out.println(functioningWorkerNum);
 //        if (functioningWorkerNum >= tokenNum){
 //            for(int i = 0; i < tokenNum; i++){
 //              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
