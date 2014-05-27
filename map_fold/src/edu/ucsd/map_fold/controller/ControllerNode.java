@@ -89,19 +89,10 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         for( WorkerConf workerConf : workerList){
             try{
                 System.out.println(workerConf.getRmiPath());
-                WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(workerConf.getRmiPath());
-                if(workerRMI != null){
-                    remoteWorkerRMI.add(workerRMI);
-                }
-
-            }
-            catch (NotBoundException notBound){
-                notBound.printStackTrace();
-            }catch (MalformedURLException mu){
-                mu.printStackTrace();
-            }catch (ConnectException ce){
-                //TODO fire another thread to retry
-                System.out.println("connect exception");
+                WorkerInterface workerRMI = WorkerClient.connectToWorker(workerConf.getUrl());
+                remoteWorkerRMI.add(workerRMI);
+            } catch (MalformedURLException e) {
+                throw new RemoteException("Malformed URL: " + workerConf.getUrl());
             }
         }
 
