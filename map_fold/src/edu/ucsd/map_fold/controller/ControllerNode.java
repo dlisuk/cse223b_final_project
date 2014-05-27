@@ -10,6 +10,7 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.rmi.Naming;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.io.File;
 
@@ -37,8 +38,8 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         this.workerList = parser.parseWorkerAddr();
         this.controllerPort = parser.parseControllerPort();
 
-        File file = new File(dataPath);
-        this.fileSize = file.length();
+        this.dataMapping = parser.mapDataSegment(dataPath, this.workerList.size());
+
         this.remoteWorkerRMI = new ArrayList<>();
 
         for( WorkerConf wc : workerList){
@@ -126,5 +127,6 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public long fileSize;
     public String controllerPort;
     public List<WorkerInterface> remoteWorkerRMI;
+    public HashMap<Integer, DataSegment> dataMapping;
 
 }

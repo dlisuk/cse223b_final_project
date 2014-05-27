@@ -1,5 +1,6 @@
 package edu.ucsd.map_fold.common;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -8,10 +9,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+
+import java.util.*;
 import edu.ucsd.map_fold.common.logistic_regression.Token;
 import edu.ucsd.map_fold.common.WorkerConf;
 public class JsonParser {
@@ -72,6 +71,23 @@ public class JsonParser {
             tokenId++;
         }
         return tokenList;
+    }
+
+    public HashMap<Integer, DataSegment> mapDataSegment(String dataPath, int workerNum){
+        File file = new File(dataPath);
+        long fileSize = file.length();
+        HashMap dataMapping = new HashMap();
+        long start = 0;
+        long length = fileSize / workerNum;
+
+        for (int i = 0; i < workerNum; i++) {
+            DataSegment ds = new DataSegment(start, start + length);
+            dataMapping.put(i, ds);
+            start += length;
+        }
+
+        return dataMapping;
+
     }
 
     public int safeLongToInt(long l) {
