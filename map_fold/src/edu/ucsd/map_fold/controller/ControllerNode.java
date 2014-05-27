@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
 import java.rmi.Naming;
+import java.util.ArrayList;
 import java.util.List;
 import java.io.File;
 
@@ -38,6 +39,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
         File file = new File(dataPath);
         this.fileSize = file.length();
+        this.remoteWorkerRMI = new ArrayList<>();
 
     }
 
@@ -86,29 +88,36 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
         for( WorkerConf workerConf : workerList){
             try{
+                System.out.println(workerConf.getRmiPath());
                 WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(workerConf.getRmiPath());
-                remoteWorkerRMI.add(workerRMI);
+                if(workerRMI != null){
+                    remoteWorkerRMI.add(workerRMI);
+                }
+
             }
             catch (NotBoundException notBound){
                 notBound.printStackTrace();
             }catch (MalformedURLException mu){
                 mu.printStackTrace();
+            }catch (ConnectException ce){
+                //TODO fire another thread to retry
+                System.out.println("connect exception");
             }
         }
 
         int functioningWorkerNum = remoteWorkerRMI.size();
-
-        if (functioningWorkerNum >= tokenNum){
-            for(int i = 0; i < tokenNum; i++){
-              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
-              workerRMI.uploadToken(tokenList.get(i));
-            }
-        }else{
-            for(int i = 0; i < workerNum; i++){
-              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
-              workerRMI.uploadToken(tokenList.get(i));
-            }
-        }
+        System.out.println(functioningWorkerNum);
+//        if (functioningWorkerNum >= tokenNum){
+//            for(int i = 0; i < tokenNum; i++){
+//              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
+//              workerRMI.uploadToken(tokenList.get(i));
+//            }
+//        }else{
+//            for(int i = 0; i < workerNum; i++){
+//              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
+//              workerRMI.uploadToken(tokenList.get(i));
+//            }
+//        }
 
 
     }

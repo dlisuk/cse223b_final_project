@@ -31,7 +31,7 @@ public class ControllerServer {
             registry.bind("Controller", controller);
             System.out.println("Controller is ready");
 
-          //  controller.init();
+            controller.init();
 
         }catch(Exception e){
             e.printStackTrace();
