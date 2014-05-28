@@ -90,7 +90,7 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
         int i = 0;
         while(success == false && i < controllers.size()){
             try{
-                controllers.get(i).dataLoaded(filePath,offset,count);
+                controllers.get(i).dataLoaded(workerId,filePath,offset,count);
                 success = true;
             }catch (Exception e){
                 i++;
@@ -101,14 +101,23 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
         }
     }
 
-    public void ping() throws RemoteException {}
+    public void ping(int _workerId) throws RemoteException {
+        if( workerId == _workerId ){
+            return;
+        }else if( workerId == -1 ){
+            workerId = _workerId;
+        }else{
+            throw new RemoteException("Wrong ID Sent in Ping");
+        }
+    }
 
     private DataSet<Matrix>                  data       = null;
     private Map<Pair<Integer,Integer>,Token> tokenStore = new HashMap<>();
     private Queue<Token>                     workQueue  = new SynchronousQueue<>();
     private Map<Integer,WorkerInterface>     workers    = new HashMap<>();
-    private List<ControllerInterface> controllers= new ArrayList<>();
+    private List<ControllerInterface>        controllers= new ArrayList<>();
     private ExecutorService                  threadPool;
     private Folder<LRState,Matrix>           folder     = new LRFolder();
     private int                              nThreads;
+    private int                              workerId=-1;
 }
