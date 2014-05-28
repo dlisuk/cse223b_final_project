@@ -55,6 +55,20 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
+    public void run(){
+       while(true){
+           //TODO: Figure out what data to put on workers taht currently have no data
+           //TODO: Uplaod data to workers with no data
+
+           //TODO: Get tokens that are not running
+           //TODO: Figure out which token goes to each worker
+           //TODO: Send token to each worker
+           //TODO: Start working on tokens on each worker
+
+           Thread.sleep(1000)
+       }
+    }
+
     public void doneWithWork(int workerId, int tokenId, int tokenVersion) throws RemoteException{
         TokenTableEntry head = tokenTable.getLatestVersion(tokenId);
         if( head.getTokenVersion() == tokenVersion ){
