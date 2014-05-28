@@ -1,5 +1,5 @@
 {
-  "data":"s3://bucket/file.tsv",
+  "data":"data/test.small.noheader.tsv",
   "workers":5,
   "tokens":[
     {
