@@ -47,9 +47,9 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         for( WorkerConf wc : workerList){
 
             try{
+                System.out.println(wc.getUrl());
                 WorkerInterface workerRMI = WorkerClient.connectToWorker(wc.getUrl());
-
-                WorkerDataTuple tuple = new WorkerDataTuple(workerRMI, -1);
+                WorkerDataTuple tuple = new WorkerDataTuple(workerRMI, -1, false);
                 workerDataMapping.add(tuple);
 
             } catch (MalformedURLException e) {
@@ -142,13 +142,15 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
               for( int i = 0; i < workerDataMapping.size(); i++){
                   WorkerInterface workerInterface = workerDataMapping.get(i).getWorkerInterface();
-                  System.out.println("Try to ping worker " + i );
+                  System.out.println("Try to ping worker " + i);
                   try{
                     workerInterface.ping(i);
                     if(!workerDataMapping.get(i).getLiveness()){
                         alive(i);
+                        System.out.println("Worker alive " + i );
                     }
                   }catch (RemoteException e){
+                      System.out.println("Worker not alive");
                       if(workerDataMapping.get(i).getLiveness()){
                           crash(i);
                       }
