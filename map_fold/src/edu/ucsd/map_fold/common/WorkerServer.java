@@ -14,9 +14,10 @@ public class WorkerServer {
             String worker_conf_path = "map_fold/conf/server_conf.json";
 
             Config config = new Config(worker_conf_path);
-
+            System.out.println("Read config");
             WorkerNode worker = new WorkerNode(0, config);
             worker.start();
+            System.out.println("Worker start");
 
             Registry registry = LocateRegistry.createRegistry(8888);
             registry.bind("worker", worker);

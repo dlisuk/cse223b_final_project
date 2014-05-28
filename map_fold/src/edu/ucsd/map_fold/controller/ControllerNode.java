@@ -1,5 +1,6 @@
 package edu.ucsd.map_fold.controller;
 
+import Jama.Matrix;
 import edu.ucsd.map_fold.common.ControllerInterface;
 
 import java.io.FileNotFoundException;
@@ -41,6 +42,8 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         dataMapping = parser.mapDataSegment(dataPath, workerList.size());
         tokenTable = new TokenTable(tokenList.size(),workerList.size());
 
+        this.workerDataMapping = new ArrayList<>();
+
         for( WorkerConf wc : workerList){
 
             try{
@@ -65,7 +68,11 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
            //TODO: Send token to each worker
            //TODO: Start working on tokens on each worker
 
-           Thread.sleep(1000)
+           try{
+               Thread.sleep(1000);
+           }catch(InterruptedException e){
+
+           }
        }
     }
 
@@ -104,6 +111,10 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public void init() throws RemoteException{
         //TODO upload token to all clients
 
+        // Start running
+        heartBeatThread hb = new heartBeatThread();
+        new Thread(hb).start();
+
 //        if (functioningWorkerNum >= tokenNum){
 //            for(int i = 0; i < tokenNum; i++){
 //              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
@@ -117,6 +128,43 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 //        }
 
 
+    }
+
+    private class heartBeatThread implements Runnable{
+        public heartBeatThread(){}
+        public void run() {
+            while(true){
+              try{
+                  Thread.sleep(10000);
+              }catch (InterruptedException e) {
+                  e.printStackTrace();
+              }
+
+              for( int i = 0; i < workerDataMapping.size(); i++){
+                  WorkerInterface workerInterface = workerDataMapping.get(i).getWorkerInterface();
+                  System.out.println("Try to ping worker " + i );
+                  try{
+                    workerInterface.ping(i);
+                    if(!workerDataMapping.get(i).getLiveness()){
+                        alive(i);
+                    }
+                  }catch (RemoteException e){
+                      if(workerDataMapping.get(i).getLiveness()){
+                          crash(i);
+                      }
+                  }
+
+              }
+            }
+        }
+    }
+
+    public void crash(int index){
+        workerDataMapping.get(index).setLiveness(false);
+    }
+
+    public void alive(int index){
+        workerDataMapping.get(index).setLiveness(true);
     }
 
     public int safeLongToInt(long l) {

@@ -21,6 +21,15 @@ public class WorkerDataTuple {
         this.dataIndex = index;
     }
 
+    public void setLiveness(boolean liveness) {
+        this.liveness = liveness;
+    }
+
+    public boolean getLiveness(){
+        return this.liveness;
+    }
+
     public WorkerInterface workerInterface;
     public int dataIndex;
+    public boolean liveness;
 }

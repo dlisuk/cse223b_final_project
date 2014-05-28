@@ -15,7 +15,7 @@ public class ControllerClient extends GenericClient<ControllerInterface> impleme
         call( w -> {try{w.doneWithWork(workerId, tokenId, tokenVersion); return null;}catch (RemoteException e){ return e; }} );
     }
     public void tokenReceived(int workerId, int tokenId, int tokenVersion) throws RemoteException {
-        call( w -> {try{w.tokenReceived(tokenId,tokenVersion); return null;}catch (RemoteException e){ return e; }} );
+        call( w -> {try{w.tokenReceived(workerId, tokenId, tokenVersion); return null;}catch (RemoteException e){ return e; }} );
     }
     public void dataLoaded(int workerId, String filePath, int offset, int count) throws RemoteException {
         call( w -> {try{w.dataLoaded(workerId, filePath,offset, count); return null;}catch (RemoteException e){ return e; }} );
