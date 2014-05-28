@@ -9,6 +9,14 @@ public class DataSegment {
         this.length = length;
     }
 
+    public long getLength() {
+        return length;
+    }
+
+    public long getStart() {
+        return start;
+    }
+
     public long start;
     public long length;
 }
