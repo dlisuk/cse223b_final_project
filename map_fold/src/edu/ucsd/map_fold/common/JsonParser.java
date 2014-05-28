@@ -73,16 +73,16 @@ public class JsonParser {
         return tokenList;
     }
 
-    public HashMap<Integer, DataSegment> mapDataSegment(String dataPath, int workerNum){
+    public List<DataSegment> mapDataSegment(String dataPath, int workerNum){
         File file = new File(dataPath);
         long fileSize = file.length();
-        HashMap dataMapping = new HashMap();
+        List<DataSegment> dataMapping = new ArrayList();
         long start = 0;
         long length = fileSize / workerNum;
 
         for (int i = 0; i < workerNum; i++) {
-            DataSegment ds = new DataSegment(start, start + length);
-            dataMapping.put(i, ds);
+            DataSegment ds = new DataSegment(start, length);
+            dataMapping.add(ds);
             start += length;
         }
 

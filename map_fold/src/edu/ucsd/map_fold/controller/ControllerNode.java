@@ -40,23 +40,24 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
         this.dataMapping = parser.mapDataSegment(dataPath, this.workerList.size());
 
-        this.remoteWorkerRMI = new ArrayList<>();
-
         for( WorkerConf wc : workerList){
+
             try{
-                System.out.println(wc.getRmiPath());
                 WorkerInterface workerRMI = WorkerClient.connectToWorker(wc.getUrl());
-                remoteWorkerRMI.add(workerRMI);
+
+                WorkerDataTuple tuple = new WorkerDataTuple(workerRMI, -1);
+                workerDataMapping.add(tuple);
+
             } catch (MalformedURLException e) {
                 throw new RemoteException("Malformed URL: " + wc.getUrl());
             }
         }
     }
 
-    public void doneWithWork() throws RemoteException{ }
+    public void doneWithWork(int workerId) throws RemoteException{ }
 
 
-    public void tokenReceived(int tokenId, int tokenVersion) throws RemoteException{
+    public void tokenReceived(int workerId, int tokenId, int tokenVersion) throws RemoteException{
         //TODO read the data set and divide the works
         int workerSize = workerList.size();
         int each_count = this.safeLongToInt(this.fileSize / workerSize);
@@ -76,17 +77,12 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     }
 
 
-    public void dataLoaded(String filePath, int offset, int count) throws RemoteException{
+    public void dataLoaded(int workerId, String filePath, int offset, int count) throws RemoteException{
         // TODO clients start work
-        for(WorkerConf worker : workerList){
-            try {
-                WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getUrl());
-                //workerRMI.startWork();
-
-            }catch (NotBoundException notBound){
-                notBound.printStackTrace();
-            }catch (MalformedURLException mu){
-                mu.printStackTrace();
+        for(int i = 0; i < dataMapping.size(); i++){
+            if(dataMapping.get(i).start == offset){
+                //If the data is loaded, we need to mark the corresponding workerDataMapping entry's indicator to 1
+                workerDataMapping.get(workerId).setDataIndex(i);
             }
         }
     }
@@ -126,7 +122,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public String dataPath;
     public long fileSize;
     public String controllerPort;
-    public List<WorkerInterface> remoteWorkerRMI;
-    public HashMap<Integer, DataSegment> dataMapping;
 
+    public List<DataSegment> dataMapping;
+    public List<WorkerDataTuple> workerDataMapping;
 }
