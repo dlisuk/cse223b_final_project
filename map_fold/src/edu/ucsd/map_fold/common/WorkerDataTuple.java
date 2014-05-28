@@ -4,9 +4,10 @@ package edu.ucsd.map_fold.common;
  * Created by thomas on 5/27/14.
  */
 public class WorkerDataTuple {
-    public WorkerDataTuple(WorkerInterface wi, int index){
+    public WorkerDataTuple(WorkerInterface wi, int index, boolean liveness){
         this.workerInterface = wi;
         this.dataIndex = index;
+        this.liveness = liveness;
     }
 
     public WorkerInterface getWorkerInterface(){

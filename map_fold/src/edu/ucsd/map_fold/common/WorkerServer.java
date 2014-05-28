@@ -20,7 +20,7 @@ public class WorkerServer {
             System.out.println("Worker start");
 
             Registry registry = LocateRegistry.createRegistry(8888);
-            registry.bind("worker", worker);
+            registry.bind("Worker", worker);
             System.out.println("Worker is ready");
 
         }catch(Exception e){
