@@ -4,7 +4,7 @@ package edu.ucsd.map_fold.common;
  * Created by thomas on 5/27/14.
  */
 public class DataSegment {
-    public DataSegment(long start, long length){
+    public DataSegment(int start, int length){
         this.start = start;
         this.length = length;
     }
@@ -17,7 +17,7 @@ public class DataSegment {
         return start;
     }
 
-    public long start;
-    public long length;
+    public int start;
+    public int length;
 }
 
