@@ -30,15 +30,16 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     //    TODO:Controller
     public ControllerNode(String jobConf, String workerConf) throws RemoteException, FileNotFoundException, IOException, ParseException{
         JsonParser parser = new JsonParser(jobConf);
-        this.workerNum = parser.parseWorkerNum();
-        this.dataPath = parser.parseDataPath();
-        this.tokenList = parser.parseTokens();
+        workerNum = parser.parseWorkerNum();
+        dataPath = parser.parseDataPath();
+        tokenList = parser.parseTokens();
 
         parser = new JsonParser(workerConf);
-        this.workerList = parser.parseWorkerAddr();
-        this.controllerPort = parser.parseControllerPort();
+        workerList = parser.parseWorkerAddr();
+        controllerPort = parser.parseControllerPort();
 
-        this.dataMapping = parser.mapDataSegment(dataPath, this.workerList.size());
+        dataMapping = parser.mapDataSegment(dataPath, workerList.size());
+        tokenTable = new TokenTable(tokenList.size(),workerList.size());
 
         for( WorkerConf wc : workerList){
 
@@ -54,26 +55,25 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
-    public void doneWithWork(int workerId) throws RemoteException{ }
+    public void doneWithWork(int workerId, int tokenId, int tokenVersion) throws RemoteException{
+        TokenTableEntry head = tokenTable.getLatestVersion(tokenId);
+        if( head.getTokenVersion() == tokenVersion ){
+            tokenTable.stopRunning(tokenId);
+            int finishedSegment = workerDataMapping.get(workerId).getDataIndex();
+            tokenTable.newVersion(tokenId, finishedSegment, workerId);
+        }else{
+            //ERror condition
+        }
+    }
 
 
     public void tokenReceived(int workerId, int tokenId, int tokenVersion) throws RemoteException{
-        //TODO read the data set and divide the works
-        int workerSize = workerList.size();
-        int each_count = this.safeLongToInt(this.fileSize / workerSize);
-        int offset = 0;
-        for(WorkerConf worker : workerList){
-            try {
-                WorkerInterface workerRMI = (WorkerInterface)Naming.lookup(worker.getUrl());
-                workerRMI.loadData(this.dataPath, offset, each_count);
-                offset += each_count;
-            }catch (NotBoundException notBound){
-               notBound.printStackTrace();
-            }catch (MalformedURLException mu){
-                mu.printStackTrace();
-            }
+        TokenTableEntry head = tokenTable.getLatestVersion(tokenId);
+        if( head.getTokenVersion() == tokenVersion ){
+            head.addHost(workerId);
+        }else{
+            //ERror condition
         }
-        System.out.println("Divided data to all workers");
     }
 
 
@@ -125,4 +125,5 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
     public List<DataSegment> dataMapping;
     public List<WorkerDataTuple> workerDataMapping;
+    private TokenTable tokenTable;
 }
