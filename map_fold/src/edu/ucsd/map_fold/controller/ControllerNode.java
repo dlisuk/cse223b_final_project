@@ -2,7 +2,7 @@ package edu.ucsd.map_fold.controller;
 
 import Jama.Matrix;
 import edu.ucsd.map_fold.common.ControllerInterface;
-
+import java.util.Iterator;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -61,7 +61,17 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public void run(){
        while(true){
            //TODO: Figure out what data to put on workers taht currently have no data
-           //TODO: Uplaod data to workers with no data
+            WorkerDataTuple tuple;
+           for(tuple : workerDataMapping)
+           {
+               if(tuple.dataIndex == -1)
+               {
+                   //TODO put data on that worker
+                   DataSegment ds = dataMapping.get(tuple.getDataIndex());
+                   tuple.workerInterface.loadData(ds.);
+               }
+           }
+           //TODO: download data to the worker in the tuple with no data
 
            //TODO: Get tokens that are not running
            //TODO: Figure out which token goes to each worker
