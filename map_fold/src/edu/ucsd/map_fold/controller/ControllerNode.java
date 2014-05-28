@@ -68,12 +68,16 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                {
                    //TODO put data on that worker
                    DataSegment ds = dataMapping.get(tuple.getDataIndex());
-                   tuple.workerInterface.loadData(ds.);
+                   try{
+                       tuple.workerInterface.loadData(dataPath,ds.start, ds.length);
+                   }catch (Exception e){
+                        System.out.println("loadData error + "e);
+                   }
                }
-           }
-           //TODO: download data to the worker in the tuple with no data
 
+           }
            //TODO: Get tokens that are not running
+            
            //TODO: Figure out which token goes to each worker
            //TODO: Send token to each worker
            //TODO: Start working on tokens on each worker
