@@ -7,16 +7,18 @@ import java.util.function.Function;
 public abstract class GenericClient<ClientType extends Remote> {
     protected boolean call(Function<ClientType, RemoteException>f) throws RemoteException {
         int trys = 0;
-        while (connection == null && trys <= 3)
+        boolean success = false;
+        while (!success && trys < 3)
             try {
                 if (connection == null)
                     connection = (ClientType) Naming.lookup(addr);
                 RemoteException e = f.apply(connection);
-                if( e != null){
+                if (e != null) {
                     throw e;
                 }
-                return true;
-            } catch (NotBoundException e) {
+                success = true;
+            } catch (NotBoundException | ConnectException e) {
+                System.out.println("Retry");
                 connection = null;
                 trys ++;
                 try { Thread.sleep(500*trys); } catch (InterruptedException ignored) { }
@@ -24,7 +26,7 @@ public abstract class GenericClient<ClientType extends Remote> {
         if (connection == null){
             throw new ConnectException("Server not up");
         }
-        return false;
+        return success;
     }
     protected void checkAddress() throws MalformedURLException {
         try {
