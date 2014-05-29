@@ -77,7 +77,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
            }
            //TODO: Get tokens that are not running
-            
+
            //TODO: Figure out which token goes to each worker
            //TODO: Send token to each worker
            //TODO: Start working on tokens on each worker
