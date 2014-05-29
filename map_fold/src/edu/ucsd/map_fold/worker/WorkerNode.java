@@ -102,6 +102,7 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
     }
 
     public void ping(int _workerId) throws RemoteException {
+        System.out.println("worker node ping output");
         if( workerId == _workerId ){
             return;
         }else if( workerId == -1 ){

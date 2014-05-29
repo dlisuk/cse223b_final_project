@@ -135,7 +135,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         public void run() {
             while(true){
               try{
-                  Thread.sleep(10000);
+                  Thread.sleep(1000);
               }catch (InterruptedException e) {
                   e.printStackTrace();
               }
