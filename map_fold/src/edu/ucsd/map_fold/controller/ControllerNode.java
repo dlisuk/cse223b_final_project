@@ -60,19 +60,22 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
     public void run(){
        while(true){
-           //TODO: Figure out what data to put on workers taht currently have no data
-            WorkerDataTuple tuple;
-           for(tuple : workerDataMapping)
+           //TODO: Figure out what data to put on workers that currently have no data
+           for(WorkerDataTuple tuple : workerDataMapping)
            {
                if(tuple.dataIndex == -1)
                {
-                   //TODO put data on that worker
-                   DataSegment ds = dataMapping.get(tuple.getDataIndex());
-                   try{
-                       tuple.workerInterface.loadData(dataPath,ds.start, ds.length);
-                   }catch (Exception e){
-                        System.out.println("loadData error + "e);
+                   if(tuple.getLiveness())
+                   {
+                       //TODO put data on that worker
+                       DataSegment ds = dataMapping.get(tuple.getDataIndex());
+                       try{
+                           tuple.workerInterface.loadData(dataPath,ds.start, ds.length);
+                       }catch (Exception e){
+                           System.out.println("loadData error + "e);
+                       }
                    }
+
                }
 
            }
