@@ -1,22 +1,15 @@
 package edu.ucsd.map_fold.controller;
 
-import Jama.Matrix;
 import edu.ucsd.map_fold.common.ControllerInterface;
 
 import java.util.*;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
-import java.rmi.Naming;
-import java.io.File;
 
 import edu.ucsd.map_fold.common.WorkerInterface;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import edu.ucsd.map_fold.common.*;
@@ -56,78 +49,12 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
-    public void run(){
-       while(true){
-           //TODO: Figure out what data to put on workers that currently have no data
-           for(WorkerDataTuple tuple : workerDataMapping)
-           {
-               if(tuple.getLiveness())
-               {
-                   if(!tuple.isDataLoaded())
-                   {
-                       //TODO put data on that worker
-                       DataSegment ds = dataMapping.get(tuple.getDataIndex());
-                       try{
-                           tuple.workerInterface.loadData(dataPath,ds.start, ds.length);
-                       }catch (Exception e){
-                           System.out.println("loadData error " + e);
-                       }
-                   }
-
-               }
-
-           }
-           //TODO: Get tokens that are not running
-           List<TokenTableEntry> notRunning = new LinkedList<>();
-
-           for(int i = 0;i<tokenTable.size();i++)
-           {
-               //tokenId = i
-               if(!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) >= 0)
-               {
-                   notRunning.add(tokenTable.getLatestVersion(i));
-               }
-
-           }
-           //TODO: Figure out which token goes to each worker
-           Random rand = new Random();
-           for( TokenTableEntry token : notRunning){
-               int left  = rand.nextInt(token.getNotSeen().size());
-               Integer target = 0;
-               //Pick a random element from the not seen set, kinda obtuse
-               for( Integer x : token.getNotSeen() ){
-                   if( left <= 0 ){
-                       target = x;
-                       break;
-                   }
-                   left -= 1;
-               }
-               double seen = 0.0;
-               int targetWorker = -1;
-               for( WorkerDataTuple x : workerDataMapping){
-                   if( x.getDataIndex() == target && x.getLiveness() ){
-                       if( seen == 0 || rand.nextDouble() < 1.0/seen)
-                           targetWorker = x.getDataIndex();
-                       seen += 1;
-                   }
-               }
-               if(targetWorker != -1){
-
-                   WorkerInterface worker = workerDataMapping.get(token.getHost()).getWorkerInterface();
-                   try {
-                       worker.sendToken(targetWorker,token.getTokenId(),token.getTokenVersion());
-                       tokenTable.setNextWorker(token.getTokenId(), targetWorker);
-                   } catch (RemoteException e) { }
-               }
-
-           }
-
-           try{
-               Thread.sleep(1000);
-           }catch(InterruptedException e){
-
-           }
-       }
+    public void startMaster() throws RemoteException{
+        // Start running
+        HeartBeatThread hb = new HeartBeatThread();
+        new Thread(hb).start();
+        MasterThread mt = new MasterThread();
+        new Thread(mt).start();
     }
 
     public void doneWithWork(int workerId, int tokenId, int tokenVersion) throws RemoteException{
@@ -168,45 +95,6 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
-    public void heartbeatInit() throws RemoteException{
-
-
-        // Start running
-        heartBeatThread hb = new heartBeatThread();
-        new Thread(hb).start();
-
-    }
-
-    private class heartBeatThread implements Runnable{
-        public heartBeatThread(){}
-        public void run() {
-            while(true){
-              try{
-                  Thread.sleep(1000);
-              }catch (InterruptedException e) {
-                  e.printStackTrace();
-              }
-
-              for( int i = 0; i < workerDataMapping.size(); i++){
-                  WorkerInterface workerInterface = workerDataMapping.get(i).getWorkerInterface();
-                  System.out.println("Try to ping worker " + i);
-                  try{
-                    workerInterface.ping(i);
-                    if(!workerDataMapping.get(i).getLiveness()){
-                        alive(i);
-                        System.out.println("Worker alive " + i );
-                    }
-                  }catch (RemoteException e){
-                      System.out.println("Worker not alive");
-                      if(workerDataMapping.get(i).getLiveness()){
-                          crash(i);
-                      }
-                  }
-
-              }
-            }
-        }
-    }
 
     public void crash(int index){
         workerDataMapping.get(index).setLiveness(false);
@@ -224,6 +112,109 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         return (int) l;
     }
 
+    private class MasterThread implements Runnable {
+        public MasterThread(){}
+        public void run() {
+            Random rand = new Random();
+            while (true) {
+                //TODO: Figure out what data to put on workers that currently have no data
+                Set<Integer> notLoadedSegments = new HashSet<>();
+                for (Integer i = 0; i < dataMapping.size(); i++) {
+                    notLoadedSegments.add(i);
+                }
+                for (WorkerDataTuple tuple : workerDataMapping) {
+                    if (tuple.getLiveness()) {
+                        notLoadedSegments.remove(tuple.dataIndex);
+                    }
+                }
+                Iterator<Integer> notLoadedSegmentsIt = notLoadedSegments.iterator();
+                for (WorkerDataTuple tuple : workerDataMapping) {
+                    if (tuple.getLiveness()) {
+                        if (tuple.getDataIndex() < 0 && notLoadedSegmentsIt.hasNext()) {
+                            //TODO put data on that worker
+                            Integer loadIndex = notLoadedSegmentsIt.next();
+                            try {
+                                DataSegment ds = dataMapping.get(loadIndex);
+                                tuple.workerInterface.loadData(dataPath, ds.start, ds.length);
+                                tuple.setDataIndex(loadIndex);
+                            } catch (Exception e) {
+                                System.out.println("loadData error " + e);
+                            }
+                        }
+                    }
+                }
+                //TODO: Get tokens that are not running
+                LinkedList<TokenTableEntry> notRunning = new LinkedList<>();
+                for (int i = 0; i < tokenTable.size(); i++) {
+                    if (!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) >= 0)
+                        notRunning.addFirst(tokenTable.getLatestVersion(i));
+                }
+
+                //TODO: Figure out which token goes to each worker
+                for (TokenTableEntry token : notRunning) {
+                    Set<Integer> notSeen = token.getNotSeen();
+                    double possibleTargets = 1.0;
+                    int targetWorker = -1;
+
+                    for (Integer i = 0; i < workerDataMapping.size(); i++) {
+                        WorkerDataTuple possibleTargetTuple = workerDataMapping.get(i);
+                        if (possibleTargetTuple.getLiveness() && notSeen.contains(possibleTargetTuple.getDataIndex())) {
+                            //This assigns equal probability to every worker that might be good to send to
+                            if (rand.nextDouble() <= 1.0 / possibleTargets)
+                                targetWorker = i;
+                            possibleTargets += 1;
+                        }
+                    }
+                    if (targetWorker != -1) {
+                        WorkerInterface worker = workerDataMapping.get(token.getHost()).getWorkerInterface();
+                        try {
+                            worker.sendToken(targetWorker, token.getTokenId(), token.getTokenVersion());
+                            tokenTable.setNextWorker(token.getTokenId(), targetWorker);
+                        } catch (RemoteException e) {
+                        }
+                    }
+
+                }
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+
+                }
+            }
+        }
+    }
+
+    private class HeartBeatThread implements Runnable{
+        public HeartBeatThread(){}
+        public void run() {
+            while(true){
+                try{
+                    Thread.sleep(1000);
+                }catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                for( int i = 0; i < workerDataMapping.size(); i++){
+                    WorkerInterface workerInterface = workerDataMapping.get(i).getWorkerInterface();
+                    System.out.println("Try to ping worker " + i);
+                    try{
+                        workerInterface.ping(i);
+                        if(!workerDataMapping.get(i).getLiveness()){
+                            alive(i);
+                            System.out.println("Worker alive " + i );
+                        }
+                    }catch (RemoteException e){
+                        System.out.println("Worker not alive");
+                        if(workerDataMapping.get(i).getLiveness()){
+                            crash(i);
+                        }
+                    }
+
+                }
+            }
+        }
+    }
 
 
     public List<WorkerConf> workerList;
