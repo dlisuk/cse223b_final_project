@@ -17,6 +17,10 @@ public class TokenTable {
         }
     }
 
+    public Integer getNextWorker(Integer tokenId){ return tokenTable.get(tokenId).getNextWorker();}
+    public void setNextWorker(Integer tokenId, Integer nextWorker){
+        tokenTable.get(tokenId).setNextWorker(nextWorker);
+    }
     public Boolean isRunning(Integer tokenId){ return tokenTable.get(tokenId).running(); }
     public void startRunning(Integer tokenId){ tokenTable.get(tokenId).setRun(true); }
     public void stopRunning(Integer tokenId){ tokenTable.get(tokenId).setRun(false); }
@@ -60,8 +64,11 @@ public class TokenTable {
 
         public Boolean running(){ return t1; }
         public void setRun(Boolean _t1){ t1 = _t1; }
+        public Integer getNextWorker(){ return nextWorker; }
+        public void setNextWorker(Integer x){ nextWorker = x; }
 
         private Boolean t1;
         private List<TokenTableEntry> t2;
+        private Integer nextWorker = -1;
     }
 }

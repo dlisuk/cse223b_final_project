@@ -43,7 +43,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         this.workerDataMapping = new ArrayList<>();
 
         for( int i = 0; i < workerList.size(); i++){
-            WorkerConf wc = workerList[i];
+            WorkerConf wc = workerList.get(i);
             try{
                 System.out.println(wc.getUrl());
                 WorkerInterface workerRMI = WorkerClient.connectToWorker(wc.getUrl());
@@ -70,7 +70,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                        try{
                            tuple.workerInterface.loadData(dataPath,ds.start, ds.length);
                        }catch (Exception e){
-                           System.out.println("loadData error + "e);
+                           System.out.println("loadData error " + e);
                        }
                    }
 
@@ -83,16 +83,44 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
            for(int i = 0;i<tokenTable.size();i++)
            {
                //tokenId = i
-               if(!tokenTable.isRunning(i))
+               if(!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) >= 0)
                {
-                   notRunning.add(tokenTable.getLatestVersion(i););
+                   notRunning.add(tokenTable.getLatestVersion(i));
                }
 
            }
            //TODO: Figure out which token goes to each worker
+           Random rand = new Random();
+           for( TokenTableEntry token : notRunning){
+               int left  = rand.nextInt(token.getNotSeen().size());
+               Integer target = 0;
+               //Pick a random element from the not seen set, kinda obtuse
+               for( Integer x : token.getNotSeen() ){
+                   if( left <= 0 ){
+                       target = x;
+                       break;
+                   }
+                   left -= 1;
+               }
+               double seen = 0.0;
+               int targetWorker = -1;
+               for( WorkerDataTuple x : workerDataMapping){
+                   if( x.getDataIndex() == target && x.getLiveness() ){
+                       if( seen == 0 || rand.nextDouble() < 1.0/seen)
+                           targetWorker = x.getDataIndex();
+                       seen += 1;
+                   }
+               }
+               if(targetWorker != -1){
 
-           //TODO: Send token to each worker
-           //TODO: Start working on tokens on each worker
+                   WorkerInterface worker = workerDataMapping.get(token.getHost()).getWorkerInterface();
+                   try {
+                       worker.sendToken(targetWorker,token.getTokenId(),token.getTokenVersion());
+                       tokenTable.setNextWorker(token.getTokenId(), targetWorker);
+                   } catch (RemoteException e) { }
+               }
+
+           }
 
            try{
                Thread.sleep(1000);
@@ -118,6 +146,12 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         TokenTableEntry head = tokenTable.getLatestVersion(tokenId);
         if( head.getTokenVersion() == tokenVersion ){
             head.addHost(workerId);
+            if( tokenTable.getNextWorker(tokenId) == workerId){
+                tokenTable.startRunning(tokenId);
+                tokenTable.setNextWorker(tokenId,-1);
+                workerDataMapping.get(workerId).getWorkerInterface().startWork(tokenId,tokenVersion);
+
+            }
         }else{
             //ERror condition
         }

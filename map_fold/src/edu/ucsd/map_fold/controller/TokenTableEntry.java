@@ -26,6 +26,9 @@ public class TokenTableEntry {
     public void removeHost(Integer hostid){
         hosts.remove(hostid);
     }
+    public Integer getHost(){
+        return hosts.iterator().next();
+    }
     public Integer nHosts(){
         return hosts.size();
     }
