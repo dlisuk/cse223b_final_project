@@ -2,7 +2,8 @@ package edu.ucsd.map_fold.controller;
 
 import Jama.Matrix;
 import edu.ucsd.map_fold.common.ControllerInterface;
-import java.util.Iterator;
+
+import java.util.*;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -10,9 +11,6 @@ import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
 import java.rmi.Naming;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.io.File;
 
 import edu.ucsd.map_fold.common.WorkerInterface;
@@ -80,7 +78,8 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
            }
            //TODO: Get tokens that are not running
-           tokenTable.isRunning()
+           List<TokenTableEntry> notRunning = new LinkedList<>();
+           tokenTable.isRunning();
            //TODO: Figure out which token goes to each worker
 
            //TODO: Send token to each worker
