@@ -44,12 +44,12 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
         this.workerDataMapping = new ArrayList<>();
 
-        for( WorkerConf wc : workerList){
-
+        for( int i = 0; i < workerList.size(); i++){
+            WorkerConf wc = workerList[i];
             try{
                 System.out.println(wc.getUrl());
                 WorkerInterface workerRMI = WorkerClient.connectToWorker(wc.getUrl());
-                WorkerDataTuple tuple = new WorkerDataTuple(workerRMI, -1, false);
+                WorkerDataTuple tuple = new WorkerDataTuple(workerRMI, i, false, false);
                 workerDataMapping.add(tuple);
 
             } catch (MalformedURLException e) {
@@ -108,25 +108,12 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
-    public void init() throws RemoteException{
-        //TODO upload token to all clients
+    public void heartbeatInit() throws RemoteException{
+
 
         // Start running
         heartBeatThread hb = new heartBeatThread();
         new Thread(hb).start();
-
-//        if (functioningWorkerNum >= tokenNum){
-//            for(int i = 0; i < tokenNum; i++){
-//              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
-//              workerRMI.uploadToken(tokenList.get(i));
-//            }
-//        }else{
-//            for(int i = 0; i < workerNum; i++){
-//              WorkerInterface workerRMI = remoteWorkerRMI.get(i);
-//              workerRMI.uploadToken(tokenList.get(i));
-//            }
-//        }
-
 
     }
 
