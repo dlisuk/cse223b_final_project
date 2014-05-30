@@ -79,7 +79,16 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
            }
            //TODO: Get tokens that are not running
            List<TokenTableEntry> notRunning = new LinkedList<>();
-           tokenTable.isRunning();
+
+           for(int i = 0;i<tokenTable.size();i++)
+           {
+               //tokenId = i
+               if(!tokenTable.isRunning(i))
+               {
+                   notRunning.add(tokenTable.getLatestVersion(i););
+               }
+
+           }
            //TODO: Figure out which token goes to each worker
 
            //TODO: Send token to each worker
