@@ -26,6 +26,7 @@ public class TokenTable {
     }
     public void lock(){editLock.lock();}
     public void unlock(){editLock.unlock();}
+    public Integer size(){ return tokenTable.size(); }
 
 
     private List<Pair> tokenTable;
