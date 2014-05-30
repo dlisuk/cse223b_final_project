@@ -63,9 +63,9 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
            //TODO: Figure out what data to put on workers that currently have no data
            for(WorkerDataTuple tuple : workerDataMapping)
            {
-               if(tuple.dataIndex == -1)
+               if(tuple.getLiveness())
                {
-                   if(tuple.getLiveness())
+                   if(!tuple.isDataLoaded())
                    {
                        //TODO put data on that worker
                        DataSegment ds = dataMapping.get(tuple.getDataIndex());
@@ -80,8 +80,9 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
            }
            //TODO: Get tokens that are not running
-
+           tokenTable.isRunning()
            //TODO: Figure out which token goes to each worker
+
            //TODO: Send token to each worker
            //TODO: Start working on tokens on each worker
 
