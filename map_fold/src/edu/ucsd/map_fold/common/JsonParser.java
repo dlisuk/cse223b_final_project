@@ -31,6 +31,28 @@ public class JsonParser {
 		return port;
 	}
 
+    public List<ControllerConf> parseControllerList(){
+        JSONArray controllerArray = (JSONArray)nodeData.get("controller");
+        List<ControllerConf> controllerConfList = new ArrayList<>();
+        for (int i = 0; i < controllerArray.size(); i++){
+            JSONObject node = (JSONObject) controllerArray.get(i);
+            String addr = (String)node.get("addr");
+            String port = (String)node.get("port");
+            String primaryValue = (String)node.get("primary");
+            boolean primary = false;
+            if(primaryValue.equals("true")){
+                primary = true;
+            }else{
+                primary = false;
+            }
+            ControllerConf conf = new ControllerConf(addr, port, primary);
+
+            controllerConfList.add(conf);
+        }
+        return controllerConfList;
+    }
+
+
     public long parseWorkerNum(){
         long workerNum = (Long)nodeData.get("workers");
         return workerNum;
@@ -41,9 +63,9 @@ public class JsonParser {
         return dataPath;
     }
 
-    public List parseWorkerAddr(){
+    public List<WorkerConf> parseWorkerAddr(){
         JSONArray nodeArray = (JSONArray)nodeData.get("worker");
-        List workerAddrList = new ArrayList<>();
+        List<WorkerConf> workerAddrList = new ArrayList<>();
         for(Object o : nodeArray){
             JSONObject node = (JSONObject) o;
             String addr = (String)node.get("addr");

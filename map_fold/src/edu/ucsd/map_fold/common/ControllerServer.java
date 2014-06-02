@@ -16,22 +16,30 @@ import edu.ucsd.map_fold.controller.ControllerNode;
 public class ControllerServer {
     public static void main (String[] argv){
         try{
-            String worker_conf_path = "map_fold/conf/server_conf.json";
-            String job_conf_path = "map_fold/conf/job.json";
+            String workerConfPath = "map_fold/conf/server_conf.json";
+            String jobConfPath = "map_fold/conf/job.json";
+            String primaryConf = "no";
+            boolean isPrimary = false;
 
-            if(argv.length == 2){
-                worker_conf_path = argv[0];
-                job_conf_path = argv[1];
+            if(argv.length == 1){
+                primaryConf = "true";
             }
-            //int port = JsonParser.parseControllerPort(worker_conf_path);
 
-            ControllerNode controller = new ControllerNode(job_conf_path, worker_conf_path);
+            if (primaryConf == "true"){
+                isPrimary = true;
+            }else{
+                isPrimary = false;
+            }
+            ControllerNode controller = new ControllerNode(jobConfPath, workerConfPath, isPrimary);
 
             Registry registry = LocateRegistry.createRegistry(Integer.parseInt(controller.controllerPort));
             registry.bind("Controller", controller);
             System.out.println("Controller is ready");
 
-            controller.heartbeatInit();
+            if(controller.isPrimary()){
+              controller.heartbeatInit();
+            }
+
 
         }catch(Exception e){
             e.printStackTrace();

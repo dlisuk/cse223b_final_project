@@ -18,9 +18,10 @@ import edu.ucsd.map_fold.common.logistic_regression.*;
 
 /* ControllerNode -- Main class to launch a controller node */
 public class ControllerNode extends UnicastRemoteObject implements ControllerInterface {
-
     //    TODO:Controller
-    public ControllerNode(String jobConf, String workerConf) throws RemoteException, FileNotFoundException, IOException, ParseException{
+    public ControllerNode(String jobConf, String workerConf, boolean isPrimary) throws RemoteException, FileNotFoundException, IOException, ParseException{
+        primary = isPrimary;
+
         JsonParser parser = new JsonParser(jobConf);
         workerNum = parser.parseWorkerNum();
         dataPath = parser.parseDataPath();
@@ -29,22 +30,35 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         parser = new JsonParser(workerConf);
         workerList = parser.parseWorkerAddr();
         controllerPort = parser.parseControllerPort();
+        controllerList = parser.parseControllerList();
+
 
         dataMapping = parser.mapDataSegment(dataPath, workerList.size());
         tokenTable = new TokenTable(tokenList.size(),workerList.size());
 
         this.workerDataMapping = new ArrayList<>();
+        this.controllerDataMapping = new ArrayList<>();
+
+        for ( int i = 0; i < controllerList.size(); i++){
+            ControllerConf cc = controllerList.get(i);
+            try{
+                ControllerInterface controllerRMI = ControllerClient.connectToController(cc.getUrl());
+                ControllerDataTuple tuple = new ControllerDataTuple(controllerRMI, cc.isPrimary(), false);
+                controllerDataMapping.add(tuple);
+            } catch (MalformedURLException e){
+                throw new RemoteException("Malformed controller URL: " + cc.getUrl());
+            }
+        }
 
         for( int i = 0; i < workerList.size(); i++){
             WorkerConf wc = workerList.get(i);
             try{
-                System.out.println(wc.getUrl());
                 WorkerInterface workerRMI = WorkerClient.connectToWorker(wc.getUrl());
                 WorkerDataTuple tuple = new WorkerDataTuple(workerRMI, i, false, false);
                 workerDataMapping.add(tuple);
 
             } catch (MalformedURLException e) {
-                throw new RemoteException("Malformed URL: " + wc.getUrl());
+                throw new RemoteException("Malformed worker URL: " + wc.getUrl());
             }
         }
     }
@@ -96,6 +110,54 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     }
 
 
+    public void ping() throws RemoteException {
+        System.out.println("Controller node ping output");
+    }
+
+
+    public void syncBetweenController(List<WorkerDataTuple> workerDataMapping, TokenTable tokenTable){
+        this.workerDataMapping = workerDataMapping;
+        this.tokenTable = tokenTable;
+    }
+
+    public void heartbeatInit() throws RemoteException{
+        heartBeatThread hb = new heartBeatThread();
+        new Thread(hb).start();
+    }
+
+    private class controllerSyncThread implements  Runnable{
+        public controllerSyncThread(){}
+        public void run() {
+            while(true){
+                try{
+                    Thread.sleep(1000);
+                }catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                for( int i = 0; i < controllerDataMapping.size(); i++){
+                    ControllerInterface controllerInterface = controllerDataMapping.get(i).getControllerInterface();
+                    System.out.println("Try to ping Controller " + i);
+                    try{
+                        controllerInterface.ping();
+                        if(!controllerDataMapping.get(i).getLiveness()){
+                            controllerAlive(i);
+                            System.out.println("Controller alive " + i );
+                        }
+                    }catch (RemoteException e){
+                        System.out.println("Controller not alive");
+                        if(controllerDataMapping.get(i).getLiveness()){
+                            controllerCrash(i);
+                        }
+                    }
+
+                }
+            }
+            //controllerList
+        }
+    }
+
+
     public void crash(int index){
         workerDataMapping.get(index).setLiveness(false);
     }
@@ -104,6 +166,10 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         workerDataMapping.get(index).setLiveness(true);
     }
 
+    public void controllerCrash(int index){ controllerDataMapping.get(index).setLiveness(false);}
+
+    public void controllerAlive(int index){ controllerDataMapping.get(index).setLiveness(true);}
+
     public int safeLongToInt(long l) {
         if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
             throw new IllegalArgumentException
@@ -111,6 +177,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
         return (int) l;
     }
+
 
     private class MasterThread implements Runnable {
         public MasterThread(){}
@@ -185,28 +252,30 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
-    private class HeartBeatThread implements Runnable{
-        public HeartBeatThread(){}
+    private class HeartBeatThread implements Runnable {
+        public HeartBeatThread() {
+        }
+
         public void run() {
-            while(true){
-                try{
+            while (true) {
+                try {
                     Thread.sleep(1000);
-                }catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
-                for( int i = 0; i < workerDataMapping.size(); i++){
+                for (int i = 0; i < workerDataMapping.size(); i++) {
                     WorkerInterface workerInterface = workerDataMapping.get(i).getWorkerInterface();
                     System.out.println("Try to ping worker " + i);
-                    try{
+                    try {
                         workerInterface.ping(i);
-                        if(!workerDataMapping.get(i).getLiveness()){
+                        if (!workerDataMapping.get(i).getLiveness()) {
                             alive(i);
-                            System.out.println("Worker alive " + i );
+                            System.out.println("Worker alive " + i);
                         }
-                    }catch (RemoteException e){
+                    } catch (RemoteException e) {
                         System.out.println("Worker not alive");
-                        if(workerDataMapping.get(i).getLiveness()){
+                        if (workerDataMapping.get(i).getLiveness()) {
                             crash(i);
                         }
                     }
@@ -216,16 +285,25 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
     }
 
+    public boolean isPrimary() {
+        return primary;
+    }
+
+    public void setPrimary(boolean primary) {
+        this.primary = primary;
+    }
 
     public List<WorkerConf> workerList;
-    public List controllerList;
+    public List<ControllerConf> controllerList;
     public List<Token> tokenList;
     public long workerNum;
     public String dataPath;
     public long fileSize;
+    public boolean primary;
     public String controllerPort;
 
     public List<DataSegment> dataMapping;
     public List<WorkerDataTuple> workerDataMapping;
+    public List<ControllerDataTuple> controllerDataMapping;
     private TokenTable tokenTable;
 }
