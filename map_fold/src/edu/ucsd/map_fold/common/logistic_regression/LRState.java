@@ -2,7 +2,9 @@ package edu.ucsd.map_fold.common.logistic_regression;
 
 import Jama.Matrix;
 
-public class LRState {
+import java.io.Serializable;
+
+public class LRState implements Serializable{
     public LRState(double _mu, double _lambda, int n) {
         learningRate    = _mu;
         regularization  = _lambda;

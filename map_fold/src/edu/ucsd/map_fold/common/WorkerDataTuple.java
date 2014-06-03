@@ -6,7 +6,7 @@ package edu.ucsd.map_fold.common;
 public class WorkerDataTuple {
     public WorkerDataTuple(WorkerInterface wi, int index, boolean liveness, boolean dataLoaded){
         this.workerInterface = wi;
-        this.dataIndex = index;
+        this.index = index;
         this.liveness = liveness;
         this.dataLoaded = dataLoaded;
     }
@@ -40,7 +40,8 @@ public class WorkerDataTuple {
     }
 
     public WorkerInterface workerInterface;
-    public int dataIndex;
+    public int index;
+    public int dataIndex = -1;
     public boolean liveness;
     public boolean dataLoaded;
 }

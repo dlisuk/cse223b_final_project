@@ -48,9 +48,20 @@ public class Config{
     public class ControllerConfig{
         public ControllerConfig(JSONObject node){
             addr = (String) node.get("addr");
+            port = (String) node.get("port");
+            if( node.containsKey("primary") ){
+                primary = (Boolean) node.get("primary");
+                System.out.print("Found primary: ");
+                System.out.println(primary);
+            }
         }
         private String addr;
-        public String getAddr() { return addr; }
+        private String  port;
+        private boolean primary = false;
+        public String getAddr() { return addr + ":" + port; }
+        public String getIpAddr() { return addr; }
+        public String getPort() { return port; }
+        public boolean isPrimary() { return primary; }
     }
 
     private JSONParser parser;

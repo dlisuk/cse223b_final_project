@@ -1,12 +1,13 @@
 package edu.ucsd.map_fold.common.logistic_regression;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Token{
+public class Token implements Serializable{
     public Token(Integer _id, List<Integer> _fields, Double _mu, Double _lambda){
         id      = _id;
-        version = 1;
+        version = 0;
         fields  = new ArrayList<>(_fields);
         state   = new LRState( _mu, _lambda, fields.size());
     }
@@ -19,7 +20,7 @@ public class Token{
 
     public int     getId()                        { return id; }
     public int     getVersion()                   { return version; }
-    public List<Integer> getFields()              { return fields; }
+    public List<Integer> getFields()              { return new ArrayList<>(fields); }
     public LRState getState()                     { return state; }
     public Token   setState( LRState _state )     { return new Token( id, version+1, fields, _state); }
 
