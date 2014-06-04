@@ -14,7 +14,7 @@ public class FileReading{
         char[] buffer = new char[](20);
         file.read(buffer,0,10);
         j = 0;
-        i = 0;
+            i = 0;
         for c <- buffer {
             if(c !=',') {
                 i++;
@@ -27,38 +27,47 @@ public class FileReading{
             c[x - j] = c[x]
         }
         file.read(buffer[x],0,10);
-
     }
-    public static Matrix fromFile(String path, int offset, int byteLimit) throws IOException {
-        String sCurrentLine;
-        RandomAccessFile file = new RandomAccessFile(path,"r");
-        file.seek(offset);
-        file.readLine();
 
-        sCurrentLine = file.readLine();
-        String[] values = sCurrentLine.split("\\t", -1);
-        //System.out.println("values length = "+values.length);
-        double[] firstRow = new double[values.length];
-        ArrayList<double[]> result = new ArrayList<double[]>();
-        for(int i = 0;i<values.length;i++)
-        {
-            System.out.println("i = "+i);
-            firstRow[i] = Double.parseDouble(values[i]);
-        }
-        result.add(firstRow);
 
-        while (( sCurrentLine = file.readLine()) != null) {
-            double[] newRow = new double[values.length];
-            //parse the tab separated line
-            values = sCurrentLine.split("\\t", -1);
-            for(int i = 0;i<values.length;i++)
+    public static Matrix fromFile(String path, int offset, int bytes) throws IOException {
+
+        try {
+            String sCurrentLine;
+
+            RandomAccessFile file = new RandomAccessFile(path,"r");
+            //get the col size
+            sCurrentLine = file.readLine();
+            String[] values = sCurrentLine.split("\\t", -1);
+            ArrayList<double[]> result = new ArrayList<double[]>();
+            file.seek(offset);
+            //read a certain bytes
+            byte[] chars = new byte[bytes];
+            String read = new String(chars);
+            System.out.println(read);
+            //chop into rows first
+            String[] rows = read.split("\\n",-1);
+            for(int i = 0;i<rows.length;i++)
             {
-                newRow[i] = Double.parseDouble(values[i]);
+                String[] chop = rows[i].split("\\t", -1);
+                //handle the last line
+                if(chop.length != values.length)
+                {
+                    rows[i] += file.readLine();
+                    chop = rows[i].split("\\t", -1);
+                }
+
+                double[] newRow = new double[values.length];
+                for(int j = 0;j<values.length;j++)
+                {
+                    newRow[j] = Double.parseDouble(chop[j]);
+                }
+                result.add(newRow);
+
             }
-            result.add(newRow);
-            System.out.println();
-            // System.out.println("line index = " + line_count);
-            // System.out.println(sCurrentLine);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         //System.out.println("rowSize = "+result.size()+" colSize = "+values.length);
         double[][] array = new double[result.size()][];
