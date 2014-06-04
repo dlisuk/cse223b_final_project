@@ -43,6 +43,8 @@ public class FileReading{
             file.seek(offset);
             //read a certain bytes
             byte[] chars = new byte[bytes];
+            int numOfBytes = file.read(chars, 0, bytes);
+
             String read = new String(chars);
             System.out.println(read);
             //chop into rows first
@@ -57,23 +59,36 @@ public class FileReading{
                     chop = rows[i].split("\\t", -1);
                 }
 
-                double[] newRow = new double[values.length];
-                for(int j = 0;j<values.length;j++)
+                //if statement to handle cases where eof is reached
+                if(chop.length == values.length)
                 {
-                    newRow[j] = Double.parseDouble(chop[j]);
+                    double[] newRow = new double[values.length];
+                    for(int j = 0;j<values.length;j++)
+                    {
+                        newRow[j] = Double.parseDouble(chop[j]);
+                    }
+                    result.add(newRow);
                 }
-                result.add(newRow);
+            }
 
+            double[][] array = new double[result.size()][];
+            for(int i = 0;i<result.size();i++)
+            {
+                array[i] = result.get(i);
+            }
+
+            //for printing only
+            for(int i = 0;i<array.length;i++)
+            {
+                for(int j = 0;j<array[0].length;j++)
+                {
+                    System.out.print(array[i][j]+" ");
+                }
+                System.out.println();
             }
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        //System.out.println("rowSize = "+result.size()+" colSize = "+values.length);
-        double[][] array = new double[result.size()][];
-        for(int i = 0;i<result.size();i++)
-        {
-            array[i] = result.get(i);
         }
         //System.out.println("array size : rows = "+array.length +" col = "+array[0].length);
         //create the new matrix object
