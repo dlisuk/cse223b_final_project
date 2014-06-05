@@ -1,4 +1,5 @@
 package edu.ucsd.map_fold.common;
+import edu.ucsd.map_fold.common.logistic_regression.Token;
 import edu.ucsd.map_fold.controller.TokenTable;
 
 import java.net.MalformedURLException;
@@ -13,6 +14,10 @@ public class ControllerClient extends GenericClient<ControllerInterface> impleme
 
     public static ControllerInterface connectToController(String IP) throws MalformedURLException {
         return new ControllerClient(IP);
+    }
+
+    public void uploadToken(int workerId, Token token) throws RemoteException {
+        call( w -> {try{w.uploadToken(workerId, token); return null;}catch (RemoteException e){ return e; }} );
     }
 
     public void doneWithWork(int workerId, int tokenId, int tokenVersion) throws RemoteException {

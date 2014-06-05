@@ -22,11 +22,13 @@ public class TokenTable {
         tokenTable.get(tokenId).setNextWorker(nextWorker);
     }
     public Boolean isRunning(Integer tokenId){ return tokenTable.get(tokenId).running(); }
+    public Boolean isDone(Integer tokenId){ return tokenTable.get(tokenId).done(); }
     public void startRunning(Integer tokenId){ tokenTable.get(tokenId).setRun(true); }
     public void stopRunning(Integer tokenId){ tokenTable.get(tokenId).setRun(false); }
     public TokenTableEntry getLatestVersion(Integer tokenId){ return tokenTable.get(tokenId).getLatest(); }
     public void rebaseToPrevious(Integer tokenId){ tokenTable.get(tokenId).rebaseToPrevious(); }
     public void newVersion(Integer tokenId, Integer segment, Integer workerId){
+        tokenTable.get(tokenId).newVersion(segment,workerId);
     }
     public void lock(){editLock.lock();}
     public void unlock(){editLock.unlock();}
@@ -40,6 +42,7 @@ public class TokenTable {
             t1 = _t1;
             t2 = new ArrayList<>();
             t2.add(_t2);
+            finished = false;
         }
 
         public TokenTableEntry getLatest(){
@@ -51,6 +54,10 @@ public class TokenTable {
         public void newVersion(Integer segment, Integer workerId){
             TokenTableEntry head = getLatest();
             TokenTableEntry newHead = head.seenDataSegment(segment);
+            if(newHead.getNotSeen().isEmpty()){
+                finished = true;
+            }
+            newHead.addHost(workerId);
             t2.add(newHead.getTokenVersion(), newHead);
         }
         public void rebaseToPrevious(){
@@ -63,11 +70,13 @@ public class TokenTable {
         }
 
         public Boolean running(){ return t1; }
+        public Boolean done(){ return finished; }
         public void setRun(Boolean _t1){ t1 = _t1; }
         public Integer getNextWorker(){ return nextWorker; }
         public void setNextWorker(Integer x){ nextWorker = x; }
 
         private Boolean t1;
+        private Boolean finished;
         private List<TokenTableEntry> t2;
         private Integer nextWorker = -1;
     }

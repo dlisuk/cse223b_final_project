@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import edu.ucsd.map_fold.common.WorkerInterface;
 import org.json.simple.parser.ParseException;
@@ -61,7 +63,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
             dataMapping.add(ds);
             start += length;
         }
-        tokenTable = new TokenTable(tokenList.size(),workerList.size());
+        tokenTable = new TokenTable(tokenList.size(),workerNum);
 
         this.controllerDataMapping = new ArrayList<>();
 
@@ -97,35 +99,50 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         new Thread(mt).start();
     }
 
+    public void uploadToken(int workerId, Token token) throws RemoteException {
+        lock.lock();
+        try {
+            Token head = tokenList.get(token.getId());
+            if (head.getVersion() < token.getVersion()) {
+                tokenList.set(token.getId(), token);
+            }
+        }finally {
+            lock.unlock();
+        }
+    }
+
     public void doneWithWork(int workerId, int tokenId, int tokenVersion) throws RemoteException{
         log("doneWithWork("+workerId+", " + tokenId+ ", " + tokenVersion + ")");
-        TokenTableEntry head = tokenTable.getLatestVersion(tokenId);
-        if( head.getTokenVersion() == tokenVersion ){
-            tokenTable.stopRunning(tokenId);
-            int finishedSegment = workerDataMapping.get(workerId).getDataIndex();
-            tokenTable.newVersion(tokenId, finishedSegment, workerId);
-        }else{
-            //ERror condition
-        }
     }
 
 
     public void tokenReceived(int workerId, int tokenId, int tokenVersion) throws RemoteException{
         log("tokenReceived("+workerId+", " + tokenId+ ", " + tokenVersion + ")");
-        TokenTableEntry head = tokenTable.getLatestVersion(tokenId);
-        if( head.getTokenVersion() == tokenVersion ){
-            head.addHost(workerId);
-            if( tokenTable.getNextWorker(tokenId) == workerId){
-                tokenTable.startRunning(tokenId);
-                tokenTable.setNextWorker(tokenId,-1);
-                workerDataMapping.get(workerId).getWorkerInterface().startWork(tokenId,tokenVersion);
+        lock.lock();
+        try {
+            TokenTableEntry head = tokenTable.getLatestVersion(tokenId);
+            if (head.getTokenVersion() == tokenVersion) {
+                head.addHost(workerId);
+                if (tokenTable.getNextWorker(tokenId) == workerId) {
+                    tokenTable.startRunning(tokenId);
+                    tokenTable.setNextWorker(tokenId, -1);
+                    workerDataMapping.get(workerId).getWorkerInterface().startWork(tokenId, tokenVersion);
 
-            }else{
-                log("ERROR B: " + tokenTable.getNextWorker(tokenId) + " " + workerId);
+                } else {
+                    log("ERROR B: " + tokenTable.getNextWorker(tokenId) + " " + workerId);
+                }
+            } else if (tokenVersion == head.getTokenVersion() + 1) {
+                tokenTable.stopRunning(tokenId);
+                int finishedSegment = workerDataMapping.get(workerId).getDataIndex();
+                tokenTable.newVersion(tokenId, finishedSegment, workerId);
+                head = tokenTable.getLatestVersion(tokenId);
+                log(head.toString());
+            } else {
+                log("ERROR A: " + head.getTokenVersion() + " " + tokenVersion);
+                //ERror condition
             }
-        }else{
-            log("ERROR A: " + head.getTokenVersion() + " " + tokenVersion );
-            //ERror condition
+        }finally {
+            lock.unlock();
         }
     }
 
@@ -136,14 +153,16 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         for(int i = 0; i < dataMapping.size(); i++){
             if(dataMapping.get(i).start == offset){
                 //If the data is loaded, we need to mark the corresponding workerDataMapping entry's indicator to 1
+                lock.lock();
                 workerDataMapping.get(workerId).setDataIndex(i);
+                lock.unlock();
             }
         }
     }
 
 
     public void ping() throws RemoteException {
-        System.out.println("Controller node ping output");
+        log("Controller node ping output");
     }
 
 
@@ -169,15 +188,15 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
                 for( int i = 0; i < controllerDataMapping.size(); i++){
                     ControllerInterface controllerInterface = controllerDataMapping.get(i).getControllerInterface();
-                    System.out.println("Try to ping Controller " + i);
+                    log("Try to ping Controller " + i);
                     try{
                         controllerInterface.ping();
                         if(!controllerDataMapping.get(i).getLiveness()){
                             controllerAlive(i);
-                            System.out.println("Controller alive " + i );
+                            log("Controller alive " + i );
                         }
                     }catch (RemoteException e){
-                        System.out.println("Controller not alive");
+                        log("Controller not alive");
                         if(controllerDataMapping.get(i).getLiveness()){
                             controllerCrash(i);
                         }
@@ -218,7 +237,8 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         public void run() {
             log("Running master");
             Random rand = new Random();
-            while (true) {
+            boolean done = false;
+            while (done == false) {
                 try {
                     //TODO: Figure out what data to put on workers that currently have no data
                     Set<Integer> notLoadedSegments = new HashSet<>();
@@ -243,7 +263,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                                     tuple.workerInterface.loadData(dataPath, ds.start, ds.length);
                                     tuple.setDataIndex(loadIndex);
                                 } catch (Exception e) {
-                                    System.out.println("loadData error " + e);
+                                    log("loadData error " + e);
                                 }
                             }
                         }
@@ -251,8 +271,12 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                     //TODO: Get tokens that are not running
                     LinkedList<TokenTableEntry> notRunning = new LinkedList<>();
                     for (int i = 0; i < tokenTable.size(); i++) {
-                        if (!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) < 0)
+                        if (!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) < 0 && !tokenTable.isDone(i))
                             notRunning.addFirst(tokenTable.getLatestVersion(i));
+                        if(tokenTable.isDone(i) && tokenList.get(i).getVersion() < 1){
+                            Integer hostNum = tokenTable.getLatestVersion(i).getHost();
+                            workerDataMapping.get(hostNum).getWorkerInterface().sendToken(-1,i,tokenTable.getLatestVersion(i).getTokenVersion());
+                        }
                     }
                     if(notRunning.size()>0){log("Not running " + notRunning);}
 
@@ -297,16 +321,26 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                         }
 
                     }
+                    done = true;
+                    for(int i = 0; i<tokenTable.size(); i++){
+                        if(!tokenTable.isDone(i)){
+                            done = false;
+                        }
+                    }
 
                 }catch(Exception e){
                     log("EXCEPTION: " + e.getMessage());
                     e.printStackTrace();
                 }finally{
                     try {
-                        Thread.sleep(1000);
+                        if(!done)
+                            Thread.sleep(1000);
                     } catch (InterruptedException e) {  }
 
                 }
+            }
+            for(Token token : tokenList){
+                System.out.println(token.toJson());
             }
         }
     }
@@ -361,6 +395,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public Integer fileSize;
     public boolean primary;
     public String controllerPort;
+    private Lock lock = new ReentrantLock();
 
     public List<DataSegment> dataMapping;
     public List<WorkerDataTuple> workerDataMapping;

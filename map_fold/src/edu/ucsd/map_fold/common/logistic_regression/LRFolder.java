@@ -4,20 +4,25 @@ import Jama.Matrix;
 import edu.ucsd.map_fold.common.Folder;
 import edu.ucsd.map_fold.common.logistic_regression.LRState;
 
-public class LRFolder implements Folder<LRState, Matrix> {
+import java.util.Arrays;
+
+public class LRFolder implements Folder<LRState, Double[]> {
     @Override
-    public LRState fold(LRState state, Matrix record) {
-        Matrix w   = state.getWeights();
-        double mu  = state.getMu();
-        double lam = state.getLambda();
+    public LRState fold(LRState state, Double[] record){
+        Double[] w   = state.getWeights();
+        Double   mu  = state.getMu();
+        Double   lam = state.getLambda();
 
-        double y   = record.get(0,0);
-        Matrix x   = record.getMatrix(0, 0, 1, record.getColumnDimension());
-        double p   = state.Apply(x);
+        Double y     = record[0];
+        Double[] x   = Arrays.copyOfRange(record, 1, record.length);
+        Double p     = y - state.Apply(x);
 
-        Matrix wPrime = x.times(y - p).transpose().times(lam).plusEquals(w.times(1 - 2 * lam * mu));
+        Double[] wPrime = Arrays.copyOf(w,w.length);
+        for(int i = 0; i < wPrime.length; i++){
+            wPrime[i] += x[i]*p*lam - wPrime[i]*lam*mu;
+        }
         double offset = state.getOffset();
-        offset += lam*(y-p-2*mu*offset);
+        offset += lam*(p-2*mu*offset);
         return new LRState(mu, lam, wPrime, offset);
     }
 }

@@ -3,43 +3,38 @@ package edu.ucsd.map_fold.worker.data;
 import Jama.Matrix;
 import edu.ucsd.map_fold.common.DataSet;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class MatrixDataSource implements DataSet<Matrix>{
-    public static DataSet<Matrix> fromFile(String path, int offset, int nbytes){
-
-       return new MatrixDataSource(nbytes, 100);
+public class MatrixDataSource implements DataSet<Double[]>{
+    public static DataSet<Double[]> fromFile(String path, int offset, int nbytes) throws IOException {
+        Double[][] matrix = FileReading.fromFile(path,offset,nbytes);
+        return new MatrixDataSource(matrix);
     }
 
-    public MatrixDataSource(Matrix _matrix){
-        rows   = _matrix.getRowDimension();
-        cols   = _matrix.getColumnDimension();
-        matrix = _matrix.copy();
-    }
-    public MatrixDataSource(int _rows, int _cols){
-        rows   = _rows;
-        cols   = _cols;
-        matrix = new Matrix(rows,cols);
+    public MatrixDataSource(Double[][] _matrix){
+        rows   = _matrix.length;
+        cols   = _matrix[0].length;
+        matrix = _matrix;
     }
 
-
-    public Iterator<Matrix> iterator() {
-        return new Iterator<Matrix>(){
-            private int row = -1;
+    public Iterator<Double[]> iterator() {
+        return new Iterator<Double[]>(){
+            private int row = 0;
             public boolean hasNext() {
                 return row < rows;
             }
 
-            public Matrix next() {
-                row += 1;
+            public Double[] next() {
                 if( !hasNext() ) throw new NoSuchElementException();
-                return matrix.getMatrix(row,row,0,cols);
+                row += 1;
+                return matrix[row-1];
             }
         };
     }
 
     private int    rows;
     private int    cols;
-    private Matrix matrix;
+    private Double[][] matrix;
 }

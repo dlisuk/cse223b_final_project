@@ -43,6 +43,9 @@ public class TokenTableEntry {
         newNotSeen.remove(i);
         return new TokenTableEntry(tokenId, tokenVersion + 1, newNotSeen);
     }
+    public String toString(){
+        return "Token " + tokenId + "." + tokenVersion + " stord on " + hosts.toString() + " need to see " + notSeen.toString();
+    }
 
     private Integer tokenId;
     private Integer tokenVersion;

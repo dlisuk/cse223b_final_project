@@ -82,13 +82,13 @@ public class JsonParser {
     public List<Token> parseTokens(){
         int tokenId = 0;
         JSONArray tokenArray = (JSONArray)nodeData.get("tokens");
+        Integer nFields = safeLongToInt((Long)nodeData.get("fields"));
         List<Token> tokenList = new ArrayList<>();
         for(Object o : tokenArray){
             JSONObject token = (JSONObject) o;
             double mu = (Double)token.get("mu");
             double lambda = (Double)token.get("lambda");
-            List<Integer> fieldList = (List)token.get("fields");
-            Token tokenObject = new Token(tokenId, fieldList, mu, lambda);
+            Token tokenObject = new Token(tokenId, mu, lambda, nFields);
             tokenList.add(tokenObject);
             tokenId++;
         }

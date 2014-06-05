@@ -17,7 +17,6 @@ public class WorkerServer {
             if(argv.length > 0){
                 worker_conf_path = argv[0];
             }
-            System.out.println("Reading config: " + worker_conf_path);
 
             Set<String> ips = ServerHelpers.getIPs();
             ips.add("127.0.0.1");
@@ -28,6 +27,7 @@ public class WorkerServer {
             }
             System.out.println();
 
+            System.out.println("Reading config: " + worker_conf_path);
             Config config = new Config(worker_conf_path);
             for( int i = 0; i < config.getNworkers(); i++){
                 Config.WorkerConfig workerConf = config.getWorker(i);

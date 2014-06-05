@@ -5,27 +5,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Token implements Serializable{
-    public Token(Integer _id, List<Integer> _fields, Double _mu, Double _lambda){
+    public Token(Integer _id, Double _mu, Double _lambda, Integer nFields){
         id      = _id;
         version = 0;
-        fields  = new ArrayList<>(_fields);
-        state   = new LRState( _mu, _lambda, fields.size());
+        state   = new LRState( _mu, _lambda, nFields);
     }
-    private Token(Integer _id, Integer _version, List<Integer> _fields, LRState _state){
+    private Token(Integer _id, Integer _version, LRState _state){
         id      = _id;
         version = _version;
         state   = _state;
-        fields  = _fields;
+    }
+
+    public String toJson(){
+        String out = "{ \"lambda\":"+state.getLambda()+", \"mu\":" + state.getMu() + ", \"offset\":" + state.getOffset() + ", \"w\":[";
+        boolean first = true;
+        for(double x : state.getWeights()){
+            if(!first)
+                out += ", ";
+            first = false;
+            out += Double.toString(x);
+        }
+        return out + "]}";
+
     }
 
     public int     getId()                        { return id; }
     public int     getVersion()                   { return version; }
-    public List<Integer> getFields()              { return new ArrayList<>(fields); }
     public LRState getState()                     { return state; }
-    public Token   setState( LRState _state )     { return new Token( id, version+1, fields, _state); }
+    public Token   setState( LRState _state )     { return new Token( id, version+1, _state); }
 
     private final Integer       id;
     private final Integer       version;
-    private final List<Integer> fields;
     private LRState             state;
 }

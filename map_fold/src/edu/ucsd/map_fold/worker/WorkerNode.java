@@ -9,6 +9,7 @@ import edu.ucsd.map_fold.common.logistic_regression.Token;
 import edu.ucsd.map_fold.worker.data.MatrixDataSource;
 import javafx.util.Pair;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.*;
 import java.rmi.server.*;
@@ -51,46 +52,41 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
         public void run() {
             log("Worker thread up");
             while(true){
-                if (workQueue.isEmpty()) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ignored) {
-                    }
-                } else {
-                    lock.lock();
+                lock.lock();
+                Token token = null;
+                try {
+                    token = workQueue.remove();
                     working++;
-                    Token token = workQueue.remove();
-                    lock.unlock();
+                }catch(NoSuchElementException e){
+                    token = null;
+                }
+                lock.unlock();
+                if (token != null) {
                     log("Starting work: " + Integer.toString(token.getId()));
-                    Mapper<Matrix, Matrix> mapper = new LRMapper(token.getFields());
-                    log("Past mapper");
                     LRState state = token.getState();
                     log("Starting folding: " + Integer.toString(token.getId()));
                     int i = 0;
-                    for (Matrix memRec : data) {
-                        i++;
-                        if(i%100==0)
-                            log("Line " + i);
-                        Matrix rec = mapper.map(memRec);
+                    for (Double[] rec : data) {
+                        if( i%100==0) log("Line " + i);
                         state = folder.fold(state, rec);
+                        i++;
                     }
                     Token outToken = token.setState(state);
-                    log("Finished folding: "  + token.getId());
-                    boolean success = false;
-                    int j = 0;
                     try {
                         uploadToken(outToken);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     } finally {
+                        lock.lock();
                         working--;
+                        lock.unlock();
                     }
-                    while(success == false && j < controllers.size()){
-                        try{
-                            controllers.get(i).doneWithWork(workerId,token.getId(),token.getVersion());
-                            success = true;
-                        }catch (Exception e){
-                            j++;
+                    for(ControllerInterface controller:controllers){
+                        try {
+                            controller.doneWithWork(workerId, token.getId(), token.getVersion());
+                            break;
+                        }catch(RemoteException e){
+                            log(e.getMessage());
                         }
                     }
                 }
@@ -110,18 +106,13 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
         tokenStore.put(new Pair<>(id, version), token);
         lock.unlock();
 
-        boolean success = false;
-        int i = 0;
-        while(success == false && i < controllers.size()){
-            try{
-                controllers.get(i).tokenReceived(workerId,token.getId(),token.getVersion());
-                success = true;
-            }catch (Exception e){
-                i++;
+        for(ControllerInterface controller:controllers){
+            try {
+                controller.tokenReceived(workerId, token.getId(), token.getVersion());
+                break;
+            }catch(RemoteException e){
+                log(e.getMessage());
             }
-        }
-        if( success == false ){
-            throw new RemoteException("No controller to inform");
         }
     }
     public void startWork(int tokenId, int version) throws RemoteException{
@@ -134,9 +125,21 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
 
     public void sendToken(int target, int tokenId, int version) throws RemoteException {
         log("sendToken(" + Integer.toString(target) + ", " + Integer.toString(tokenId) + ", " + Integer.toString(version));
-        WorkerInterface targetWorker = workers.get(target);
-        Token           token        = tokenStore.get(new Pair<>(tokenId, version));
-        targetWorker.uploadToken(token);
+        Token token = tokenStore.get(new Pair<>(tokenId, version));
+        if(target  < 0 ){
+            //Send to controller in this case
+            for(ControllerInterface controller:controllers){
+                try {
+                    controller.uploadToken(workerId, token);
+                    break;
+                }catch(RemoteException e){
+                    log(e.getMessage());
+                }
+            }
+        }else {
+            WorkerInterface targetWorker = workers.get(target);
+            targetWorker.uploadToken(token);
+        }
     }
 
     public void loadData(String filePath, int offset, int count) throws RemoteException{
@@ -146,7 +149,12 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
             throw new RemoteException("Work queued for loaded data, cannot load new data");
         }
         data = null;
-        data = MatrixDataSource.fromFile(filePath,offset,count);
+        try {
+            data = MatrixDataSource.fromFile(filePath,offset,count);
+        } catch (IOException e) {
+            lock.unlock();
+            throw new RemoteException(e.getMessage());
+        }
         boolean success = false;
         int i = 0;
         while(success == false && i < controllers.size()){
@@ -191,13 +199,13 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
 
     private Lock                             lock       = new ReentrantLock();
     private Integer                          working    = 0;
-    private DataSet<Matrix>                  data       = null;
+    private DataSet<Double[]>                data       = null;
     private Map<Pair<Integer,Integer>,Token> tokenStore = new HashMap<>();
     private Queue<Token>                     workQueue  = new LinkedBlockingQueue<>();
     private Map<Integer,WorkerInterface>     workers    = new HashMap<>();
     private List<ControllerInterface>        controllers= new ArrayList<>();
     private ExecutorService                  threadPool;
-    private Folder<LRState,Matrix>           folder     = new LRFolder();
+    private Folder<LRState,Double[]>         folder     = new LRFolder();
     private int                              nThreads;
     private int                              workerId=-1;
 
