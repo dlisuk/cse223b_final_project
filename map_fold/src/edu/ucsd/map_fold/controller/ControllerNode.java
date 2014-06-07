@@ -241,6 +241,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     }
 
 
+    //TODO: when crashe we need to update token stuff a bit
     public void crash(int index){
         workerDataMapping.get(index).setLiveness(false);
     }
@@ -272,7 +273,6 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
             boolean done = false;
             while (done == false) {
                 try {
-                    //TODO: Figure out what data to put on workers that currently have no data
                     Set<Integer> notLoadedSegments = new HashSet<>();
                     for (Integer i = 0; i < dataMapping.size(); i++) {
                         notLoadedSegments.add(i);
@@ -282,12 +282,14 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                             notLoadedSegments.remove(tuple.dataIndex);
                         }
                     }
+                    //TODO: remove segments that have been seen by ALL tokens from notLoaded Segments
+                    //TODO: create a set of tokens that need to be seen still
                     if(notLoadedSegments.size()>0){log("Not loaded " + notLoadedSegments);}
                     Iterator<Integer> notLoadedSegmentsIt = notLoadedSegments.iterator();
                     for (WorkerDataTuple tuple : workerDataMapping) {
                         if (tuple.getLiveness()) {
+                            //TODO: Add condition that if tuple currently has data that does not need to be seen, reload
                             if (tuple.getDataIndex() < 0 && notLoadedSegmentsIt.hasNext()) {
-                                //TODO put data on that worker
                                 Integer loadIndex = notLoadedSegmentsIt.next();
                                 try {
                                     log("Loading " + loadIndex + " on " + tuple.index);
@@ -297,10 +299,9 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                                 } catch (Exception e) {
                                     log("loadData error " + e);
                                 }
-                            }
+                        }
                         }
                     }
-                    //TODO: Get tokens that are not running
                     LinkedList<TokenTableEntry> notRunning = new LinkedList<>();
                     for (int i = 0; i < tokenTable.size(); i++) {
                         if (!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) < 0 && !tokenTable.isDone(i))
