@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import Jama.Matrix;
 
 public class FileReading{
     /*public static void test() {
@@ -28,6 +29,14 @@ public class FileReading{
         }
         file.read(buffer[x],0,10);
     }*/
+=======
+    public static void main(String[] argv)
+    {
+        System.out.println("Hello");
+        String path = "/Users/max/Dropbox/UCSD/Sp14/cse223b/Final Project/cse223b_final_project/data/test.small.noheader.tsv";
+        fromFile(path, 2000000,10);
+    }
+>>>>>>> Stashed changes
 
 
     public static Double[][] fromFile(String path, int offset, int bytes) throws IOException {

@@ -30,8 +30,12 @@ public class ControllerClient extends GenericClient<ControllerInterface> impleme
         call( w -> {try{w.dataLoaded(workerId, filePath,offset, count); return null;}catch (RemoteException e){ return e; }} );
     }
 
-    public void syncBetweenController(List<WorkerDataTuple> workerTupleData, TokenTable tokenTable) throws RemoteException{
-        call( w -> {try{w.syncBetweenController(workerTupleData, tokenTable); return null;}catch (RemoteException e){ return e;}} );
+    public void syncWorkerDataLoading(List<WorkerDataTuple> workerTupleData) throws RemoteException{
+        call( w -> {try{w.syncWorkerDataLoading(workerTupleData); return null;}catch (RemoteException e){ return e;}} );
+    }
+
+    public void syncTokenData(TokenTable tokenTable) throws RemoteException{
+        call(w -> {try{w.syncTokenData(tokenTable); return null;}catch (RemoteException e){ return e;}} );
     }
 
     public void ping() throws RemoteException {

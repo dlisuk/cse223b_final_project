@@ -77,7 +77,6 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                 throw new RemoteException("Malformed controller URL: " + cc.getUrl());
             }
         }
-
         for( int i = 0; i < workerList.size(); i++){
             WorkerConf wc = workerList.get(i);
             try{
@@ -127,7 +126,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                     tokenTable.startRunning(tokenId);
                     tokenTable.setNextWorker(tokenId, -1);
                     workerDataMapping.get(workerId).getWorkerInterface().startWork(tokenId, tokenVersion);
-
+                    syncController(2);
                 } else {
                     log("ERROR B: " + tokenTable.getNextWorker(tokenId) + " " + workerId);
                 }
@@ -158,6 +157,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                 lock.unlock();
             }
         }
+        syncController(1);
     }
 
 
@@ -165,10 +165,42 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         log("Controller node ping output");
     }
 
+    public void syncController(int stage) throws RemoteException{
 
-    public void syncBetweenController(List<WorkerDataTuple> workerDataMapping, TokenTable tokenTable){
-        this.workerDataMapping = workerDataMapping;
-        this.tokenTable = tokenTable;
+        switch (stage){
+            case 1:
+                for( int i = 0; i < controllerDataMapping.size(); i++){
+                    ControllerDataTuple controller = controllerDataMapping.get(i);
+                    if(!controller.isPrimary()){
+                        ControllerInterface controllerInterface = controller.getControllerInterface();
+                        System.out.println("Try to sync worker data tuple with Controller " + i);
+                        try{
+                            controllerInterface.syncWorkerDataLoading(workerDataMapping);
+
+                        }catch (RemoteException e){
+                            System.out.println("Sync worker data with controller failed");
+                        }
+                    }
+                }
+                break;
+
+            case 2:
+                for( int i = 0; i < controllerDataMapping.size(); i++){
+                    ControllerDataTuple controller = controllerDataMapping.get(i);
+                    if(!controller.isPrimary()){
+                        ControllerInterface controllerInterface = controller.getControllerInterface();
+                        System.out.println("Try to sync Token data with Controller " + i);
+                        try{
+                            controllerInterface.syncTokenData(tokenTable);
+
+                        }catch (RemoteException e){
+                            System.out.println("Sync worker data with controller failed");
+                        }
+                    }
+                }
+                break;
+        }
+
     }
 
     public void heartbeatInit() throws RemoteException{
@@ -319,7 +351,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                                 }
                             }
                         }
-
+                        System.out.println("token allocation finished");
                     }
                     done = true;
                     for(int i = 0; i<tokenTable.size(); i++){
