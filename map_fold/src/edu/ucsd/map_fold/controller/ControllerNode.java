@@ -243,11 +243,18 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
     //TODO: when crashe we need to update token stuff a bit
     public void crash(int index){
+        lock.lock();
         workerDataMapping.get(index).setLiveness(false);
+        workerDataMapping.get(index).setDataIndex(-1);
+        workerDataMapping.get(index).setDataLoaded(false);
+        tokenTable.removeHost(index);
+        lock.unlock();
     }
 
     public void alive(int index){
+        lock.lock();
         workerDataMapping.get(index).setLiveness(true);
+        lock.unlock();
     }
 
     public void controllerCrash(int index){ controllerDataMapping.get(index).setLiveness(false);}
@@ -283,23 +290,35 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                         }
                     }
                     //TODO: remove segments that have been seen by ALL tokens from notLoaded Segments
+                    Set<Integer> seen = new HashSet<>();
+                    for (Integer i = 0;i<dataMapping.size();i++) {
+                        seen.add(i);
+                    }
+                    for(Token token: tokenList)
+                    {
+                        for(Integer notSeen : tokenTable.getLatestVersion(token.getId()).getNotSeen())
+                        {
+                            seen.remove(notSeen);
+                        }
+                    }
                     //TODO: create a set of tokens that need to be seen still
                     if(notLoadedSegments.size()>0){log("Not loaded " + notLoadedSegments);}
                     Iterator<Integer> notLoadedSegmentsIt = notLoadedSegments.iterator();
                     for (WorkerDataTuple tuple : workerDataMapping) {
                         if (tuple.getLiveness()) {
                             //TODO: Add condition that if tuple currently has data that does not need to be seen, reload
-                            if (tuple.getDataIndex() < 0 && notLoadedSegmentsIt.hasNext()) {
-                                Integer loadIndex = notLoadedSegmentsIt.next();
-                                try {
+                            if((tuple.getDataIndex() < 0 || seen.contains(tuple.getDataIndex())) && notLoadedSegmentsIt.hasNext())
+                            {
+                                try{
+                                    Integer loadIndex = notLoadedSegmentsIt.next();
                                     log("Loading " + loadIndex + " on " + tuple.index);
                                     DataSegment ds = dataMapping.get(loadIndex);
-                                    tuple.workerInterface.loadData(dataPath, ds.start, ds.length);
+                                    tuple.workerInterface.loadData(dataPath,ds.start, ds.length);
                                     tuple.setDataIndex(loadIndex);
-                                } catch (Exception e) {
+                                }catch (Exception e){
                                     log("loadData error " + e);
                                 }
-                        }
+                            }
                         }
                     }
                     LinkedList<TokenTableEntry> notRunning = new LinkedList<>();

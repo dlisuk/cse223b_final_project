@@ -4,11 +4,6 @@
       "addr" : "127.0.0.1",
       "port" : "8888",
       "threads": 2
-    },
-    {
-      "addr" : "127.0.0.1",
-      "port" : "8889",
-      "threads": 2
     }
   ],
   "controller":[
