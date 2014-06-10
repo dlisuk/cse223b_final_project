@@ -143,32 +143,38 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
     }
 
     public void loadData(String filePath, int offset, int count) throws RemoteException{
-        lock.lock();
         log("loadData(" + filePath + ", " + Integer.toString(offset) + ", " + Integer.toString(count));
         if(working>0 || workQueue.size()>0){
             throw new RemoteException("Work queued for loaded data, cannot load new data");
         }
-        data = null;
-        try {
-            data = MatrixDataSource.fromFile(filePath,offset,count);
-        } catch (IOException e) {
-            lock.unlock();
-            throw new RemoteException(e.getMessage());
-        }
-        boolean success = false;
-        int i = 0;
-        while(success == false && i < controllers.size()){
+        Runnable task = () -> {
             try{
-                controllers.get(i).dataLoaded(workerId,filePath,offset,count);
-                success = true;
-            }catch (Exception e){
-                i++;
+                lock.lock();
+                data = null;
+                data = MatrixDataSource.fromFile(filePath, offset, count);
+                boolean success = false;
+                int i = 0;
+                while (success == false && i < controllers.size()) {
+                    try {
+                        controllers.get(i).dataLoaded(workerId, filePath, offset, count);
+                        success = true;
+                    } catch (Exception e) {
+                        i++;
+                    }
+                }
+                if(success == false){
+                    throw new Exception("No controller to inform");
+                }
+            } catch (Exception e) {
+                lock.unlock();
+                log(e.getMessage());
+                return;
+            }finally{
+                lock.unlock();
             }
-        }
-        if( success == false ){
-            throw new RemoteException("No controller to inform");
-        }
-        lock.unlock();
+        };
+
+        new Thread(task,"Data Loading Thread").start();
     }
 
     public void ping(int _workerId) throws RemoteException {

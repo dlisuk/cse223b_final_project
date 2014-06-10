@@ -211,11 +211,18 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
     //TODO: when crashe we need to update token stuff a bit
     public void crash(int index){
+        lock.lock();
         workerDataMapping.get(index).setLiveness(false);
+        workerDataMapping.get(index).setDataIndex(-1);
+        workerDataMapping.get(index).setDataLoaded(false);
+        tokenTable.removeHost(index);
+        lock.unlock();
     }
 
     public void alive(int index){
+        lock.lock();
         workerDataMapping.get(index).setLiveness(true);
+        lock.unlock();
     }
 
     public void controllerCrash(int index){ controllerDataMapping.get(index).setLiveness(false);}

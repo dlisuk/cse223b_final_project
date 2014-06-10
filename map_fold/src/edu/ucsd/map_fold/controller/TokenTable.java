@@ -30,6 +30,15 @@ public class TokenTable {
     public void newVersion(Integer tokenId, Integer segment, Integer workerId){
         tokenTable.get(tokenId).newVersion(segment,workerId);
     }
+    public void removeHost(Integer hostId){
+        for( Pair pair : tokenTable){
+            for( TokenTableEntry entry : pair.t2){
+                entry.removeHost(hostId);
+            }
+            while(pair.getLatest().getTokenVersion() > 0 && pair.getLatest().nHosts() == 0)
+                pair.rebaseToPrevious();
+        }
+    }
     public void lock(){editLock.lock();}
     public void unlock(){editLock.unlock();}
     public Integer size(){ return tokenTable.size(); }
