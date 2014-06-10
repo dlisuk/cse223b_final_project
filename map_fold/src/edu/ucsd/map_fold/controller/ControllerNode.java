@@ -308,7 +308,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
                         for (Integer i = 0; i < workerDataMapping.size(); i++) {
                             WorkerDataTuple possibleTargetTuple = workerDataMapping.get(i);
-                            if (possibleTargetTuple.getLiveness() && notSeen.contains(possibleTargetTuple.getDataIndex())) {
+                            if (possibleTargetTuple.getLiveness() && possibleTargetTuple.isDataLoaded() && notSeen.contains(possibleTargetTuple.getDataIndex())) {
                                 //This assigns equal probability to every worker that might be good to send to
                                 if (rand.nextDouble() <= 1.0 / possibleTargets)
                                     targetWorker = i;
