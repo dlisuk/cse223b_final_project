@@ -99,8 +99,8 @@ public class JsonParser {
         File file = new File(dataPath);
         long fileSize = file.length();
         List<DataSegment> dataMapping = new ArrayList();
-        int start = 0;
-        int length = safeLongToInt(fileSize) / workerNum;
+        Long start = 0l;
+        Long length = fileSize / workerNum;
 
         for (int i = 0; i < workerNum; i++) {
             DataSegment ds = new DataSegment(start, length);

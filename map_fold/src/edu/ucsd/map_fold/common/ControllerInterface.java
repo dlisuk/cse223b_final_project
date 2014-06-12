@@ -13,7 +13,7 @@ public interface ControllerInterface extends Remote{
     public void uploadToken(int workerId, Token token) throws RemoteException;
     public void doneWithWork(int workerId, int tokenId, int tokenVersion) throws RemoteException;
     public void tokenReceived(int workerId, int tokenId, int tokenVersion) throws RemoteException;
-    public void dataLoaded(int workerId, String filePath, int offset, int count) throws RemoteException;
+    public void dataLoaded(int workerId, String filePath, Long offset, Long count) throws RemoteException;
     public void syncBetweenController(List<WorkerDataTuple> workerTupleData, TokenTable tokenTable) throws RemoteException;
     public void ping() throws RemoteException;
 }

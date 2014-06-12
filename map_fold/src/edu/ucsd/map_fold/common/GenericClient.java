@@ -5,10 +5,11 @@ import java.rmi.*;
 import java.util.function.Function;
 
 public abstract class GenericClient<ClientType extends Remote> {
+    private Boolean dead=true;
     protected boolean call(Function<ClientType, RemoteException>f) throws RemoteException {
         int trys = 0;
         boolean success = false;
-        while (!success && trys < 3)
+        while (!success && ((!dead && trys < 3 ) || (dead && trys < 1)))
             try {
                 if (connection == null)
                     connection = (ClientType) Naming.lookup(addr);
@@ -18,7 +19,6 @@ public abstract class GenericClient<ClientType extends Remote> {
                 }
                 success = true;
             } catch (NotBoundException | ConnectException e) {
-                System.out.println("Retry");
                 connection = null;
                 trys ++;
                 try { Thread.sleep(500*trys); } catch (InterruptedException ignored) { }
@@ -26,6 +26,7 @@ public abstract class GenericClient<ClientType extends Remote> {
         if (connection == null){
             throw new ConnectException("Server not up");
         }
+        dead = success;
         return success;
     }
     protected void checkAddress() throws MalformedURLException {

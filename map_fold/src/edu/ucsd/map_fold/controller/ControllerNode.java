@@ -32,7 +32,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         workerNum = safeLongToInt(parser.parseWorkerNum());
         dataPath = parser.parseDataPath();
         tokenList = parser.parseTokens();
-        log(tokenList.toString());
+        //log(tokenList.toString());
 
         controllerList = new ArrayList<>();
         for( int i = 0; i < config.getNcontrollers(); i++){
@@ -51,9 +51,9 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
         dataMapping = new ArrayList<>();
         File file = new File(dataPath);
-        fileSize = safeLongToInt(file.length());
-        int start = 0;
-        int length = fileSize / workerNum;
+        fileSize = file.length();
+        Long start = 0l;
+        Long length = fileSize / workerNum;
 
         for (int i = 0; i < workerNum; i++) {
             if(i==(workerNum-1)){
@@ -136,7 +136,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                 int finishedSegment = workerDataMapping.get(workerId).getDataIndex();
                 tokenTable.newVersion(tokenId, finishedSegment, workerId);
                 head = tokenTable.getLatestVersion(tokenId);
-                log(head.toString());
+               // log(head.toString());
             } else {
                 log("ERROR A: " + head.getTokenVersion() + " " + tokenVersion);
                 //ERror condition
@@ -147,16 +147,21 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     }
 
 
-    public void dataLoaded(int workerId, String filePath, int offset, int count) throws RemoteException{
+    public void dataLoaded(int workerId, String filePath, Long offset, Long count) throws RemoteException{
         log("dataLoaded("+workerId+", " + filePath+ ", " + offset + ", " + count + ")");
         // TODO clients start work
-        for(int i = 0; i < dataMapping.size(); i++){
-            if(dataMapping.get(i).start == offset){
-                //If the data is loaded, we need to mark the corresponding workerDataMapping entry's indicator to 1
-                lock.lock();
-                workerDataMapping.get(workerId).setDataIndex(i);
-                lock.unlock();
-            }
+        int ind = workerDataMapping.get(workerId).getDataIndex();
+        if(dataMapping.get(ind).start.equals(offset)){
+            //If the data is loaded, we need to mark the corresponding workerDataMapping entry's indicator to 1
+            lock.lock();
+            workerDataMapping.get(workerId).setDataLoaded(true);
+            lock.unlock();
+        }else{
+            lock.lock();
+            log("BAD LOAD: " + offset + " " + dataMapping.get(ind).start);
+            workerDataMapping.get(workerId).setDataLoaded(false);
+            workerDataMapping.get(workerId).setDataIndex(-1);
+            lock.unlock();
         }
     }
 
@@ -181,7 +186,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         public void run() {
             while(true){
                 try{
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 }catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -244,6 +249,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
         }
         public void run() {
             log("Running master");
+            tik();
             Random rand = new Random();
             boolean done = false;
             while (done == false) {
@@ -269,8 +275,9 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                             seen.remove(notSeen);
                         }
                     }
+                    notLoadedSegments.removeAll(seen);
+                    if(seen.size()>0){log(seen.toString());}
                     //TODO: create a set of tokens that need to be seen still
-                    if(notLoadedSegments.size()>0){log("Not loaded " + notLoadedSegments);}
                     Iterator<Integer> notLoadedSegmentsIt = notLoadedSegments.iterator();
                     for (WorkerDataTuple tuple : workerDataMapping) {
                         if (tuple.getLiveness()) {
@@ -279,7 +286,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                             {
                                 try{
                                     Integer loadIndex = notLoadedSegmentsIt.next();
-                                    log("Loading " + loadIndex + " on " + tuple.index);
+                                    //log("Loading " + loadIndex + " on " + tuple.index);
                                     DataSegment ds = dataMapping.get(loadIndex);
                                     tuple.workerInterface.loadData(dataPath,ds.start, ds.length);
                                     tuple.setDataIndex(loadIndex);
@@ -291,14 +298,14 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                     }
                     LinkedList<TokenTableEntry> notRunning = new LinkedList<>();
                     for (int i = 0; i < tokenTable.size(); i++) {
-                        if (!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) < 0 && !tokenTable.isDone(i))
+                        if (!tokenTable.isRunning(i) && tokenTable.getNextWorker(i) < 0 && !tokenTable.isDone(i)) {
                             notRunning.addFirst(tokenTable.getLatestVersion(i));
+                        }
                         if(tokenTable.isDone(i) && tokenList.get(i).getVersion() < 1){
                             Integer hostNum = tokenTable.getLatestVersion(i).getHost();
                             workerDataMapping.get(hostNum).getWorkerInterface().sendToken(-1,i,tokenTable.getLatestVersion(i).getTokenVersion());
                         }
                     }
-                    if(notRunning.size()>0){log("Not running " + notRunning);}
 
                     //TODO: Figure out which token goes to each worker
                     for (TokenTableEntry token : notRunning) {
@@ -308,7 +315,12 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
 
                         for (Integer i = 0; i < workerDataMapping.size(); i++) {
                             WorkerDataTuple possibleTargetTuple = workerDataMapping.get(i);
+                            if(possibleTargetTuple.getLiveness() ) {
+                                //log("Possible token = " + i);
+                                //log(possibleTargetTuple.getLiveness() + " " + possibleTargetTuple.isDataLoaded() + " " + notSeen.contains(possibleTargetTuple.getDataIndex() + " " + possibleTargetTuple.getDataIndex()));
+                            }
                             if (possibleTargetTuple.getLiveness() && possibleTargetTuple.isDataLoaded() && notSeen.contains(possibleTargetTuple.getDataIndex())) {
+                                //log("Passes test " + i);
                                 //This assigns equal probability to every worker that might be good to send to
                                 if (rand.nextDouble() <= 1.0 / possibleTargets)
                                     targetWorker = i;
@@ -354,14 +366,15 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
                 }finally{
                     try {
                         if(!done)
-                            Thread.sleep(1000);
+                            Thread.sleep(100);
                     } catch (InterruptedException e) {  }
 
                 }
             }
-            for(Token token : tokenList){
+            /*for(Token token : tokenList){
                 System.out.println(token.toJson());
-            }
+            }*/
+            toc();
         }
     }
 
@@ -412,7 +425,7 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     public List<Token> tokenList;
     public Integer workerNum;
     public String dataPath;
-    public Integer fileSize;
+    public Long fileSize;
     public boolean primary;
     public String controllerPort;
     private Lock lock = new ReentrantLock();
@@ -423,6 +436,14 @@ public class ControllerNode extends UnicastRemoteObject implements ControllerInt
     private TokenTable tokenTable;
 
     private DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    private Stack<Long> tiks = new Stack<>();
+    private void tik(){
+        tiks.add(new Date().getTime());
+    }
+    private void toc(){
+        Long now = new Date().getTime();
+        System.out.println("Total Time:" + (now - tiks.pop()));
+    }
     private void log(String msg){
         Date date = new Date();
 
