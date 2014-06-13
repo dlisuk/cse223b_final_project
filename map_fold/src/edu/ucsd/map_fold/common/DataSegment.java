@@ -4,20 +4,20 @@ package edu.ucsd.map_fold.common;
  * Created by thomas on 5/27/14.
  */
 public class DataSegment {
-    public DataSegment(int start, int length){
+    public DataSegment(Long start, Long length){
         this.start = start;
         this.length = length;
     }
 
-    public int getLength() {
+    public Long getLength() {
         return length;
     }
 
-    public int getStart() {
+    public Long getStart() {
         return start;
     }
 
-    public int start;
-    public int length;
+    public Long start;
+    public Long length;
 }
 

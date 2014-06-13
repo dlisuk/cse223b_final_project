@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class MatrixDataSource implements DataSet<Double[]>{
-    public static DataSet<Double[]> fromFile(String path, int offset, int nbytes) throws IOException {
+    public static DataSet<Double[]> fromFile(String path, Long offset, Long nbytes) throws IOException {
         Double[][] matrix = FileReading.fromFile(path,offset,nbytes);
         return new MatrixDataSource(matrix);
     }

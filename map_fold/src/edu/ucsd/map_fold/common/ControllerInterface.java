@@ -16,5 +16,6 @@ public interface ControllerInterface extends Remote{
     public void dataLoaded(int workerId, String filePath, int offset, int count) throws RemoteException;
     public void syncWorkerDataLoading(List<WorkerDataTuple> workerTupleData) throws RemoteException;
     public void syncTokenData(TokenTable tokenTable) throws RemoteException;
+    public void dataLoaded(int workerId, String filePath, Long offset, Long count) throws RemoteException;
     public void ping() throws RemoteException;
 }

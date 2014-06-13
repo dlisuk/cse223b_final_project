@@ -39,7 +39,7 @@ public class FileReading{
 >>>>>>> Stashed changes
 
 
-    public static Double[][] fromFile(String path, int offset, int bytes) throws IOException {
+    public static Double[][] fromFile(String path, Long offset, Long bytes) throws IOException {
         String sCurrentLine;
         RandomAccessFile file = new RandomAccessFile(path,"r");
         //get the col size
@@ -48,8 +48,8 @@ public class FileReading{
         ArrayList<Double[]> result = new ArrayList<Double[]>();
         file.seek(offset);
         //read a certain bytes
-        byte[] chars = new byte[bytes];
-        int numOfBytes = file.read(chars, 0, bytes);
+        byte[] chars = new byte[bytes.intValue()];
+        int numOfBytes = file.read(chars, 0, bytes.intValue());
 
         String read = new String(chars);
         //System.out.println(read);
@@ -57,23 +57,24 @@ public class FileReading{
         String[] rows = read.split("\\n",-1);
         for(int i = 0;i<rows.length;i++)
         {
-            String[] chop = rows[i].split("\\t", -1);
-            //handle the last line
-            if(chop.length != values.length)
-            {
-                rows[i] += file.readLine();
-                chop = rows[i].split("\\t", -1);
-            }
-
-            //if statement to handle cases where eof is reached
-            if(chop.length == values.length)
-            {
-                Double[] newRow = new Double[values.length];
-                for(int j = 0;j<values.length;j++)
-                {
-                    newRow[j] = Double.parseDouble(chop[j]);
+            try {
+                String[] chop = rows[i].split("\\t", -1);
+                //handle the last line
+                if (chop.length != values.length) {
+                    rows[i] += file.readLine();
+                    chop = rows[i].split("\\t", -1);
                 }
-                result.add(newRow);
+
+                //if statement to handle cases where eof is reached
+                if (chop.length == values.length) {
+                    Double[] newRow = new Double[values.length];
+                    for (int j = 0; j < values.length; j++) {
+                        newRow[j] = Double.parseDouble(chop[j]);
+                    }
+                    result.add(newRow);
+                }
+            }catch (Exception ignore){
+                System.out.println("Bad row: " + rows[i]);
             }
         }
 

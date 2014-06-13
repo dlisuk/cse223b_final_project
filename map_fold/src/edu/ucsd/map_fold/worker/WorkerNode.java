@@ -67,7 +67,6 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
                     log("Starting folding: " + Integer.toString(token.getId()));
                     int i = 0;
                     for (Double[] rec : data) {
-                        if( i%100==0) log("Line " + i);
                         state = folder.fold(state, rec);
                         i++;
                     }
@@ -142,8 +141,8 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
         }
     }
 
-    public void loadData(String filePath, int offset, int count) throws RemoteException{
-        log("loadData(" + filePath + ", " + Integer.toString(offset) + ", " + Integer.toString(count));
+    public void loadData(String filePath, Long offset, Long count) throws RemoteException{
+        log("loadData(" + filePath + ", " + offset + ", " + count);
         if(working>0 || workQueue.size()>0){
             throw new RemoteException("Work queued for loaded data, cannot load new data");
         }
@@ -172,6 +171,7 @@ public class WorkerNode extends UnicastRemoteObject implements WorkerInterface{
             }finally{
                 lock.unlock();
             }
+            log("Data Loaded");
         };
 
         new Thread(task,"Data Loading Thread").start();
